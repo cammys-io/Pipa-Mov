@@ -4,6 +4,10 @@ import 'package:provider/provider.dart';
 import '../../../models/usuario.dart';
 import '../../../providers/usuario_provider.dart';
 
+const _accent = Color(0xFFCBFF3D);
+const _darkPanel = Color(0xFF16212B);
+const _darkField = Color(0xFF1E2C38);
+
 /// Formulario de alta/edición de personal.
 /// Requisitos 6 y 8: alta de personal + edición.
 class PersonalFormDialog extends StatefulWidget {
@@ -84,10 +88,9 @@ class _PersonalFormDialogState extends State<PersonalFormDialog> {
       telefono: _telefonoCtrl.text.trim(),
       correo: _correoCtrl.text.trim(),
       puesto: _puesto,
-      numeroLicencia:
-          _requiereLicencia && _licenciaCtrl.text.trim().isNotEmpty
-              ? _licenciaCtrl.text.trim()
-              : null,
+      numeroLicencia: _requiereLicencia && _licenciaCtrl.text.trim().isNotEmpty
+          ? _licenciaCtrl.text.trim()
+          : null,
       vigenciaLicencia: _requiereLicencia ? _vigenciaLicencia : null,
       estado: _estado,
       fechaRegistro: widget.usuario?.fechaRegistro,
@@ -116,129 +119,184 @@ class _PersonalFormDialogState extends State<PersonalFormDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text(widget.esEdicion ? 'Editar personal' : 'Nuevo personal'),
-      content: SizedBox(
-        width: 480,
-        child: Form(
-          key: _formKey,
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextFormField(
-                  controller: _nombreCtrl,
-                  decoration: const InputDecoration(labelText: 'Nombre(s)'),
-                  validator: (v) =>
-                      (v == null || v.trim().isEmpty) ? 'Requerido' : null,
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextFormField(
-                        controller: _apPaternoCtrl,
-                        decoration: const InputDecoration(
-                            labelText: 'Apellido paterno'),
-                        validator: (v) => (v == null || v.trim().isEmpty)
-                            ? 'Requerido'
-                            : null,
+    return Theme(
+      data: _darkDialogTheme(context),
+      child: AlertDialog(
+        backgroundColor: _darkPanel,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text(
+          widget.esEdicion ? 'Editar personal' : 'Nuevo personal',
+          style:
+              const TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+        ),
+        content: SizedBox(
+          width: 480,
+          child: Form(
+            key: _formKey,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextFormField(
+                    controller: _nombreCtrl,
+                    decoration: const InputDecoration(labelText: 'Nombre(s)'),
+                    validator: (v) =>
+                        (v == null || v.trim().isEmpty) ? 'Requerido' : null,
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextFormField(
+                          controller: _apPaternoCtrl,
+                          decoration: const InputDecoration(
+                              labelText: 'Apellido paterno'),
+                          validator: (v) => (v == null || v.trim().isEmpty)
+                              ? 'Requerido'
+                              : null,
+                        ),
                       ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: TextFormField(
+                          controller: _apMaternoCtrl,
+                          decoration: const InputDecoration(
+                              labelText: 'Apellido materno'),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: _telefonoCtrl,
+                    decoration: const InputDecoration(labelText: 'Teléfono'),
+                    keyboardType: TextInputType.phone,
+                    validator: (v) =>
+                        (v == null || v.trim().isEmpty) ? 'Requerido' : null,
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: _correoCtrl,
+                    decoration: const InputDecoration(labelText: 'Correo'),
+                    keyboardType: TextInputType.emailAddress,
+                    validator: (v) {
+                      if (v == null || v.trim().isEmpty) return 'Requerido';
+                      if (!v.contains('@')) return 'Correo inválido';
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<Puesto>(
+                    initialValue: _puesto,
+                    decoration: const InputDecoration(labelText: 'Puesto'),
+                    items: Puesto.values
+                        .map((p) =>
+                            DropdownMenuItem(value: p, child: Text(p.label)))
+                        .toList(),
+                    onChanged: (v) => setState(() => _puesto = v!),
+                  ),
+                  if (_requiereLicencia) ...[
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: _licenciaCtrl,
+                      decoration: const InputDecoration(
+                          labelText: 'Número de licencia'),
+                      validator: (v) =>
+                          (_requiereLicencia && (v == null || v.trim().isEmpty))
+                              ? 'Requerido para choferes/operadores'
+                              : null,
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: TextFormField(
-                        controller: _apMaternoCtrl,
+                    const SizedBox(height: 12),
+                    InkWell(
+                      borderRadius: BorderRadius.circular(12),
+                      onTap: _elegirVigencia,
+                      child: InputDecorator(
                         decoration: const InputDecoration(
-                            labelText: 'Apellido materno'),
+                            labelText: 'Vigencia licencia'),
+                        child: Text(
+                          _vigenciaLicencia == null
+                              ? 'Seleccionar fecha'
+                              : '${_vigenciaLicencia!.day}/${_vigenciaLicencia!.month}/${_vigenciaLicencia!.year}',
+                          style: const TextStyle(color: Colors.white),
+                        ),
                       ),
                     ),
                   ],
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: _telefonoCtrl,
-                  decoration: const InputDecoration(labelText: 'Teléfono'),
-                  keyboardType: TextInputType.phone,
-                  validator: (v) =>
-                      (v == null || v.trim().isEmpty) ? 'Requerido' : null,
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: _correoCtrl,
-                  decoration: const InputDecoration(labelText: 'Correo'),
-                  keyboardType: TextInputType.emailAddress,
-                  validator: (v) {
-                    if (v == null || v.trim().isEmpty) return 'Requerido';
-                    if (!v.contains('@')) return 'Correo inválido';
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 12),
-                DropdownButtonFormField<Puesto>(
-                  initialValue: _puesto,
-                  decoration: const InputDecoration(labelText: 'Puesto'),
-                  items: Puesto.values
-                      .map((p) =>
-                          DropdownMenuItem(value: p, child: Text(p.label)))
-                      .toList(),
-                  onChanged: (v) => setState(() => _puesto = v!),
-                ),
-                if (_requiereLicencia) ...[
                   const SizedBox(height: 12),
-                  TextFormField(
-                    controller: _licenciaCtrl,
-                    decoration:
-                        const InputDecoration(labelText: 'Número de licencia'),
-                    validator: (v) => (_requiereLicencia &&
-                            (v == null || v.trim().isEmpty))
-                        ? 'Requerido para choferes/operadores'
-                        : null,
-                  ),
-                  const SizedBox(height: 12),
-                  InkWell(
-                    onTap: _elegirVigencia,
-                    child: InputDecorator(
-                      decoration:
-                          const InputDecoration(labelText: 'Vigencia licencia'),
-                      child: Text(
-                        _vigenciaLicencia == null
-                            ? 'Seleccionar fecha'
-                            : '${_vigenciaLicencia!.day}/${_vigenciaLicencia!.month}/${_vigenciaLicencia!.year}',
-                      ),
-                    ),
+                  DropdownButtonFormField<EstadoPersonal>(
+                    initialValue: _estado,
+                    decoration: const InputDecoration(labelText: 'Estado'),
+                    items: EstadoPersonal.values
+                        .map((e) =>
+                            DropdownMenuItem(value: e, child: Text(e.label)))
+                        .toList(),
+                    onChanged: (v) => setState(() => _estado = v!),
                   ),
                 ],
-                const SizedBox(height: 12),
-                DropdownButtonFormField<EstadoPersonal>(
-                  initialValue: _estado,
-                  decoration: const InputDecoration(labelText: 'Estado'),
-                  items: EstadoPersonal.values
-                      .map((e) =>
-                          DropdownMenuItem(value: e, child: Text(e.label)))
-                      .toList(),
-                  onChanged: (v) => setState(() => _estado = v!),
-                ),
-              ],
+              ),
             ),
           ),
         ),
+        actions: [
+          TextButton(
+            onPressed: _guardando ? null : () => Navigator.pop(context),
+            style: TextButton.styleFrom(foregroundColor: Colors.white60),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: _accent,
+              foregroundColor: Colors.black,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10)),
+            ),
+            onPressed: _guardando ? null : _guardar,
+            child: _guardando
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(
+                        strokeWidth: 2, color: Colors.black))
+                : const Text('Guardar'),
+          ),
+        ],
       ),
-      actions: [
-        TextButton(
-          onPressed: _guardando ? null : () => Navigator.pop(context),
-          child: const Text('Cancelar'),
-        ),
-        FilledButton(
-          onPressed: _guardando ? null : _guardar,
-          child: _guardando
-              ? const SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: CircularProgressIndicator(strokeWidth: 2))
-              : const Text('Guardar'),
-        ),
-      ],
     );
   }
+}
+
+/// Theme local: inputs y dropdowns oscuros solo dentro de este diálogo.
+ThemeData _darkDialogTheme(BuildContext context) {
+  final base = Theme.of(context);
+  return base.copyWith(
+    textTheme: base.textTheme
+        .apply(bodyColor: Colors.white, displayColor: Colors.white),
+    inputDecorationTheme: InputDecorationTheme(
+      filled: true,
+      fillColor: _darkField,
+      labelStyle: const TextStyle(color: Colors.white54),
+      helperStyle: const TextStyle(color: Colors.white38),
+      hintStyle: const TextStyle(color: Colors.white38),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide.none,
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: _accent, width: 1.4),
+      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+    ),
+    dropdownMenuTheme: DropdownMenuThemeData(
+      menuStyle:
+          MenuStyle(backgroundColor: WidgetStateProperty.all(_darkField)),
+    ),
+    popupMenuTheme: const PopupMenuThemeData(color: _darkField),
+    datePickerTheme: DatePickerThemeData(
+      backgroundColor: _darkPanel,
+      headerBackgroundColor: _accent,
+      headerForegroundColor: Colors.black,
+    ),
+  );
 }

@@ -7,6 +7,10 @@ import '../../../providers/usuario_provider.dart';
 import '../../../providers/vehiculo_provider.dart';
 import 'vehiculo_form_dialog.dart';
 
+const _accent = Color(0xFFCBFF3D);
+const _darkPanel = Color(0xFF16212B);
+const _darkPanelAlt = Color(0xFF1E2C38);
+
 class VehiculosTab extends StatefulWidget {
   const VehiculosTab({super.key});
 
@@ -45,8 +49,7 @@ class _VehiculosTabState extends State<VehiculosTab> {
               onPressed: () => Navigator.pop(ctx, false),
               child: const Text('Cancelar')),
           FilledButton(
-            style:
-                FilledButton.styleFrom(backgroundColor: AppColors.danger),
+            style: FilledButton.styleFrom(backgroundColor: AppColors.danger),
             onPressed: () => Navigator.pop(ctx, true),
             child: const Text('Eliminar'),
           ),
@@ -65,14 +68,20 @@ class _VehiculosTabState extends State<VehiculosTab> {
     }
   }
 
-  Color _estadoColor(EstadoVehiculo estado) {
+  ({Color bg, Color fg}) _estadoColors(EstadoVehiculo estado) {
     switch (estado) {
       case EstadoVehiculo.activo:
-        return AppColors.success;
+        return (bg: _accent, fg: Colors.black);
       case EstadoVehiculo.mantenimiento:
-        return AppColors.warning;
+        return (
+          bg: AppColors.warning.withValues(alpha: 0.2),
+          fg: AppColors.warning
+        );
       case EstadoVehiculo.fueraDeServicio:
-        return AppColors.danger;
+        return (
+          bg: AppColors.danger.withValues(alpha: 0.2),
+          fg: AppColors.danger
+        );
     }
   }
 
@@ -97,16 +106,38 @@ class _VehiculosTabState extends State<VehiculosTab> {
           Row(
             children: [
               Expanded(
-                child: TextField(
-                  decoration: const InputDecoration(
-                    prefixIcon: Icon(Icons.search),
-                    hintText: 'Buscar por placas, marca o modelo…',
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: _darkPanelAlt,
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  onChanged: (v) => setState(() => _busqueda = v),
+                  child: TextField(
+                    style: const TextStyle(color: Colors.white),
+                    decoration: const InputDecoration(
+                      filled: false,
+                      border: OutlineInputBorder(
+                        borderSide: BorderSide.none,
+                        borderRadius: BorderRadius.all(Radius.circular(12)),
+                      ),
+                      prefixIcon: Icon(Icons.search, color: Colors.white54),
+                      hintText: 'Buscar por placas, marca o modelo…',
+                      hintStyle: TextStyle(color: Colors.white38),
+                    ),
+                    onChanged: (v) => setState(() => _busqueda = v),
+                  ),
                 ),
               ),
               const SizedBox(width: 12),
               ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: _accent,
+                  foregroundColor: Colors.black,
+                  elevation: 0,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                ),
                 onPressed: () => _abrirFormulario(),
                 icon: const Icon(Icons.add),
                 label: const Text('Nuevo vehículo'),
@@ -115,63 +146,86 @@ class _VehiculosTabState extends State<VehiculosTab> {
           ),
           const SizedBox(height: 16),
           Expanded(
-            child: Card(
+            child: Container(
+              decoration: BoxDecoration(
+                color: _darkPanel,
+                borderRadius: BorderRadius.circular(18),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.18),
+                    blurRadius: 20,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
+              ),
               child: provider.cargando
-                  ? const Center(child: CircularProgressIndicator())
+                  ? const Center(
+                      child: CircularProgressIndicator(color: _accent))
                   : vehiculos.isEmpty
                       ? const Center(
-                          child: Text('No hay vehículos registrados.'))
-                      : SingleChildScrollView(
-                          child: SingleChildScrollView(
-                            scrollDirection: Axis.horizontal,
-                            child: DataTable(
-                              columns: const [
-                                DataColumn(label: Text('Placas')),
-                                DataColumn(label: Text('Marca / Modelo')),
-                                DataColumn(label: Text('Año')),
-                                DataColumn(label: Text('Capacidad (L)')),
-                                DataColumn(label: Text('Tipo')),
-                                DataColumn(label: Text('Estado')),
-                                DataColumn(label: Text('Responsable')),
-                                DataColumn(label: Text('Acciones')),
-                              ],
-                              rows: vehiculos.map((v) {
-                                final responsable =
-                                    usuarioProvider.porId(v.responsableId);
-                                return DataRow(cells: [
-                                  DataCell(Text(v.placas)),
-                                  DataCell(Text('${v.marca} ${v.modelo}')),
-                                  DataCell(Text('${v.anio}')),
-                                  DataCell(Text(
-                                      v.capacidadLitros.toStringAsFixed(0))),
-                                  DataCell(Text(v.tipo.label)),
-                                  DataCell(EstadoChip(
-                                    label: v.estado.label,
-                                    color: _estadoColor(v.estado),
-                                  )),
-                                  DataCell(
-                                      Text(responsable?.nombreCompleto ?? '—')),
-                                  DataCell(Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      IconButton(
-                                        tooltip: 'Editar',
-                                        icon: const Icon(Icons.edit_outlined),
-                                        onPressed: () =>
-                                            _abrirFormulario(vehiculo: v),
-                                      ),
-                                      IconButton(
-                                        tooltip: 'Eliminar',
-                                        icon: const Icon(
-                                            Icons.delete_outline,
-                                            color: AppColors.danger),
-                                        onPressed: () =>
-                                            _confirmarEliminar(v),
-                                      ),
-                                    ],
-                                  )),
-                                ]);
-                              }).toList(),
+                          child: Text('No hay vehículos registrados.',
+                              style: TextStyle(color: Colors.white54)))
+                      : ClipRRect(
+                          borderRadius: BorderRadius.circular(18),
+                          child: Theme(
+                            data: _darkTableTheme(context),
+                            child: SingleChildScrollView(
+                              child: SingleChildScrollView(
+                                scrollDirection: Axis.horizontal,
+                                padding: const EdgeInsets.all(8),
+                                child: DataTable(
+                                  columns: const [
+                                    DataColumn(label: Text('Placas')),
+                                    DataColumn(label: Text('Marca / Modelo')),
+                                    DataColumn(label: Text('Año')),
+                                    DataColumn(label: Text('Capacidad (L)')),
+                                    DataColumn(label: Text('Tipo')),
+                                    DataColumn(label: Text('Estado')),
+                                    DataColumn(label: Text('Responsable')),
+                                    DataColumn(label: Text('Acciones')),
+                                  ],
+                                  rows: vehiculos.map((v) {
+                                    final responsable =
+                                        usuarioProvider.porId(v.responsableId);
+                                    final c = _estadoColors(v.estado);
+                                    return DataRow(cells: [
+                                      DataCell(Text(v.placas)),
+                                      DataCell(Text('${v.marca} ${v.modelo}')),
+                                      DataCell(Text('${v.anio}')),
+                                      DataCell(Text(v.capacidadLitros
+                                          .toStringAsFixed(0))),
+                                      DataCell(Text(v.tipo.label)),
+                                      DataCell(
+                                          _chip(v.estado.label, c.bg, c.fg)),
+                                      DataCell(Text(
+                                          responsable?.nombreCompleto ?? '—')),
+                                      DataCell(Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          IconButton(
+                                            tooltip: 'Editar',
+                                            icon: const Icon(
+                                                Icons.edit_outlined,
+                                                color: Colors.white70,
+                                                size: 20),
+                                            onPressed: () =>
+                                                _abrirFormulario(vehiculo: v),
+                                          ),
+                                          IconButton(
+                                            tooltip: 'Eliminar',
+                                            icon: const Icon(
+                                                Icons.delete_outline,
+                                                color: AppColors.danger,
+                                                size: 20),
+                                            onPressed: () =>
+                                                _confirmarEliminar(v),
+                                          ),
+                                        ],
+                                      )),
+                                    ]);
+                                  }).toList(),
+                                ),
+                              ),
                             ),
                           ),
                         ),
@@ -181,4 +235,32 @@ class _VehiculosTabState extends State<VehiculosTab> {
       ),
     );
   }
+}
+
+Widget _chip(String label, Color bg, Color fg) {
+  return Container(
+    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+    decoration: BoxDecoration(
+      color: bg,
+      borderRadius: BorderRadius.circular(20),
+    ),
+    child: Text(label,
+        style: TextStyle(color: fg, fontWeight: FontWeight.w700, fontSize: 11)),
+  );
+}
+
+ThemeData _darkTableTheme(BuildContext context) {
+  final base = Theme.of(context);
+  return base.copyWith(
+    dataTableTheme: DataTableThemeData(
+      headingRowColor: WidgetStateProperty.all(_darkPanelAlt),
+      headingTextStyle: const TextStyle(
+          color: Colors.white70, fontWeight: FontWeight.w700, fontSize: 12),
+      dataTextStyle: const TextStyle(color: Colors.white, fontSize: 13),
+      dataRowMinHeight: 54,
+      dataRowMaxHeight: 60,
+      dividerThickness: 0.4,
+    ),
+    dividerColor: Colors.white12,
+  );
 }
