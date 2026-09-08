@@ -9,7 +9,8 @@ const _darkPanel = Color(0xFF16212B);
 const _darkField = Color(0xFF1E2C38);
 
 /// Formulario de alta/edición de personal.
-/// Requisitos 6 y 8: alta de personal + edición.
+/// Campos alineados al esquema de BD: nombre, rol, telefono,
+/// numeroLicencia, vigencia, estado.
 class PersonalFormDialog extends StatefulWidget {
   final Usuario? usuario;
 
@@ -25,42 +26,32 @@ class _PersonalFormDialogState extends State<PersonalFormDialog> {
   final _formKey = GlobalKey<FormState>();
 
   late final TextEditingController _nombreCtrl;
-  late final TextEditingController _apPaternoCtrl;
-  late final TextEditingController _apMaternoCtrl;
   late final TextEditingController _telefonoCtrl;
-  late final TextEditingController _correoCtrl;
   late final TextEditingController _licenciaCtrl;
 
-  late Puesto _puesto;
+  late Rol _rol;
   late EstadoPersonal _estado;
-  DateTime? _vigenciaLicencia;
+  DateTime? _vigencia;
   bool _guardando = false;
 
-  bool get _requiereLicencia =>
-      _puesto == Puesto.chofer || _puesto == Puesto.operador;
+  bool get _requiereLicencia => _rol == Rol.chofer || _rol == Rol.operador;
 
   @override
   void initState() {
     super.initState();
     final u = widget.usuario;
     _nombreCtrl = TextEditingController(text: u?.nombre ?? '');
-    _apPaternoCtrl = TextEditingController(text: u?.apellidoPaterno ?? '');
-    _apMaternoCtrl = TextEditingController(text: u?.apellidoMaterno ?? '');
     _telefonoCtrl = TextEditingController(text: u?.telefono ?? '');
-    _correoCtrl = TextEditingController(text: u?.correo ?? '');
     _licenciaCtrl = TextEditingController(text: u?.numeroLicencia ?? '');
-    _puesto = u?.puesto ?? Puesto.chofer;
+    _rol = u?.rol ?? Rol.chofer;
     _estado = u?.estado ?? EstadoPersonal.activo;
-    _vigenciaLicencia = u?.vigenciaLicencia;
+    _vigencia = u?.vigencia;
   }
 
   @override
   void dispose() {
     _nombreCtrl.dispose();
-    _apPaternoCtrl.dispose();
-    _apMaternoCtrl.dispose();
     _telefonoCtrl.dispose();
-    _correoCtrl.dispose();
     _licenciaCtrl.dispose();
     super.dispose();
   }
@@ -68,11 +59,11 @@ class _PersonalFormDialogState extends State<PersonalFormDialog> {
   Future<void> _elegirVigencia() async {
     final fecha = await showDatePicker(
       context: context,
-      initialDate: _vigenciaLicencia ?? DateTime.now(),
+      initialDate: _vigencia ?? DateTime.now(),
       firstDate: DateTime(2015),
       lastDate: DateTime(2100),
     );
-    if (fecha != null) setState(() => _vigenciaLicencia = fecha);
+    if (fecha != null) setState(() => _vigencia = fecha);
   }
 
   Future<void> _guardar() async {
@@ -83,15 +74,12 @@ class _PersonalFormDialogState extends State<PersonalFormDialog> {
     final nuevo = Usuario(
       id: widget.usuario?.id ?? '',
       nombre: _nombreCtrl.text.trim(),
-      apellidoPaterno: _apPaternoCtrl.text.trim(),
-      apellidoMaterno: _apMaternoCtrl.text.trim(),
       telefono: _telefonoCtrl.text.trim(),
-      correo: _correoCtrl.text.trim(),
-      puesto: _puesto,
+      rol: _rol,
       numeroLicencia: _requiereLicencia && _licenciaCtrl.text.trim().isNotEmpty
           ? _licenciaCtrl.text.trim()
           : null,
-      vigenciaLicencia: _requiereLicencia ? _vigenciaLicencia : null,
+      vigencia: _requiereLicencia ? _vigencia : null,
       estado: _estado,
       fechaRegistro: widget.usuario?.fechaRegistro,
     );
@@ -140,32 +128,10 @@ class _PersonalFormDialogState extends State<PersonalFormDialog> {
                 children: [
                   TextFormField(
                     controller: _nombreCtrl,
-                    decoration: const InputDecoration(labelText: 'Nombre(s)'),
+                    decoration:
+                        const InputDecoration(labelText: 'Nombre completo'),
                     validator: (v) =>
                         (v == null || v.trim().isEmpty) ? 'Requerido' : null,
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextFormField(
-                          controller: _apPaternoCtrl,
-                          decoration: const InputDecoration(
-                              labelText: 'Apellido paterno'),
-                          validator: (v) => (v == null || v.trim().isEmpty)
-                              ? 'Requerido'
-                              : null,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: TextFormField(
-                          controller: _apMaternoCtrl,
-                          decoration: const InputDecoration(
-                              labelText: 'Apellido materno'),
-                        ),
-                      ),
-                    ],
                   ),
                   const SizedBox(height: 12),
                   TextFormField(
@@ -176,25 +142,14 @@ class _PersonalFormDialogState extends State<PersonalFormDialog> {
                         (v == null || v.trim().isEmpty) ? 'Requerido' : null,
                   ),
                   const SizedBox(height: 12),
-                  TextFormField(
-                    controller: _correoCtrl,
-                    decoration: const InputDecoration(labelText: 'Correo'),
-                    keyboardType: TextInputType.emailAddress,
-                    validator: (v) {
-                      if (v == null || v.trim().isEmpty) return 'Requerido';
-                      if (!v.contains('@')) return 'Correo inválido';
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 12),
-                  DropdownButtonFormField<Puesto>(
-                    initialValue: _puesto,
-                    decoration: const InputDecoration(labelText: 'Puesto'),
-                    items: Puesto.values
-                        .map((p) =>
-                            DropdownMenuItem(value: p, child: Text(p.label)))
+                  DropdownButtonFormField<Rol>(
+                    initialValue: _rol,
+                    decoration: const InputDecoration(labelText: 'Rol'),
+                    items: Rol.values
+                        .map((r) =>
+                            DropdownMenuItem(value: r, child: Text(r.label)))
                         .toList(),
-                    onChanged: (v) => setState(() => _puesto = v!),
+                    onChanged: (v) => setState(() => _rol = v!),
                   ),
                   if (_requiereLicencia) ...[
                     const SizedBox(height: 12),
@@ -212,12 +167,12 @@ class _PersonalFormDialogState extends State<PersonalFormDialog> {
                       borderRadius: BorderRadius.circular(12),
                       onTap: _elegirVigencia,
                       child: InputDecorator(
-                        decoration: const InputDecoration(
-                            labelText: 'Vigencia licencia'),
+                        decoration:
+                            const InputDecoration(labelText: 'Vigencia'),
                         child: Text(
-                          _vigenciaLicencia == null
+                          _vigencia == null
                               ? 'Seleccionar fecha'
-                              : '${_vigenciaLicencia!.day}/${_vigenciaLicencia!.month}/${_vigenciaLicencia!.year}',
+                              : '${_vigencia!.day}/${_vigencia!.month}/${_vigencia!.year}',
                           style: const TextStyle(color: Colors.white),
                         ),
                       ),

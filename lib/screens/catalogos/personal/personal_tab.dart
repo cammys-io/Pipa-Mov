@@ -7,8 +7,9 @@ import '../../../providers/usuario_provider.dart';
 import 'personal_form_dialog.dart';
 
 const _accent = Color(0xFFCBFF3D);
-const _darkPanel = Color(0xFF16212B);
-const _darkPanelAlt = Color(0xFF1E2C38);
+const _panel = AppColors.surface;
+const _panelAlt = Color(0xFFF1F4F7);
+const _border = Color(0xFFE3E8ED);
 
 class PersonalTab extends StatefulWidget {
   const PersonalTab({super.key});
@@ -73,8 +74,7 @@ class _PersonalTabState extends State<PersonalTab> {
     final usuarios = provider.usuarios.where((u) {
       if (_busqueda.isEmpty) return true;
       final q = _busqueda.toLowerCase();
-      return u.nombreCompleto.toLowerCase().contains(q) ||
-          u.correo.toLowerCase().contains(q);
+      return u.nombreCompleto.toLowerCase().contains(q);
     }).toList();
 
     return Padding(
@@ -87,20 +87,21 @@ class _PersonalTabState extends State<PersonalTab> {
               Expanded(
                 child: Container(
                   decoration: BoxDecoration(
-                    color: _darkPanelAlt,
+                    color: _panelAlt,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: TextField(
-                    style: const TextStyle(color: Colors.white),
+                    style: const TextStyle(color: AppColors.textPrimary),
                     decoration: const InputDecoration(
                       filled: false,
                       border: OutlineInputBorder(
                         borderSide: BorderSide.none,
                         borderRadius: BorderRadius.all(Radius.circular(12)),
                       ),
-                      prefixIcon: Icon(Icons.search, color: Colors.white54),
-                      hintText: 'Buscar por nombre o correo…',
-                      hintStyle: TextStyle(color: Colors.white38),
+                      prefixIcon:
+                          Icon(Icons.search, color: AppColors.textSecondary),
+                      hintText: 'Buscar por nombre…',
+                      hintStyle: TextStyle(color: AppColors.textSecondary),
                     ),
                     onChanged: (v) => setState(() => _busqueda = v),
                   ),
@@ -127,27 +128,29 @@ class _PersonalTabState extends State<PersonalTab> {
           Expanded(
             child: Container(
               decoration: BoxDecoration(
-                color: _darkPanel,
+                color: _panel,
                 borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: _border),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.18),
+                    color: Colors.black.withValues(alpha: 0.06),
                     blurRadius: 20,
-                    offset: const Offset(0, 10),
+                    offset: const Offset(0, 8),
                   ),
                 ],
               ),
               child: provider.cargando
                   ? const Center(
-                      child: CircularProgressIndicator(color: _accent))
+                      child:
+                          CircularProgressIndicator(color: AppColors.primary))
                   : usuarios.isEmpty
                       ? const Center(
                           child: Text('No hay personal registrado.',
-                              style: TextStyle(color: Colors.white54)))
+                              style: TextStyle(color: AppColors.textSecondary)))
                       : ClipRRect(
                           borderRadius: BorderRadius.circular(18),
                           child: Theme(
-                            data: _darkTableTheme(context),
+                            data: _tableTheme(context),
                             child: SingleChildScrollView(
                               child: SingleChildScrollView(
                                 scrollDirection: Axis.horizontal,
@@ -155,27 +158,25 @@ class _PersonalTabState extends State<PersonalTab> {
                                 child: DataTable(
                                   columns: const [
                                     DataColumn(label: Text('Nombre')),
-                                    DataColumn(label: Text('Puesto')),
+                                    DataColumn(label: Text('Rol')),
                                     DataColumn(label: Text('Teléfono')),
-                                    DataColumn(label: Text('Correo')),
                                     DataColumn(label: Text('Licencia')),
+                                    DataColumn(label: Text('Vigencia')),
                                     DataColumn(label: Text('Estado')),
                                     DataColumn(label: Text('Acciones')),
                                   ],
                                   rows: usuarios.map((u) {
-                                    final activo =
-                                        u.estado == EstadoPersonal.activo;
+                                    final c = _estadoColors(u.estado);
                                     return DataRow(cells: [
                                       DataCell(Text(u.nombreCompleto)),
-                                      DataCell(Text(u.puesto.label)),
+                                      DataCell(Text(u.rol.label)),
                                       DataCell(Text(u.telefono)),
-                                      DataCell(Text(u.correo)),
                                       DataCell(Text(u.numeroLicencia ?? '—')),
-                                      DataCell(_chip(
-                                        u.estado.label,
-                                        activo ? _accent : Colors.white24,
-                                        activo ? Colors.black : Colors.white70,
-                                      )),
+                                      DataCell(Text(u.vigencia == null
+                                          ? '—'
+                                          : '${u.vigencia!.day}/${u.vigencia!.month}/${u.vigencia!.year}')),
+                                      DataCell(
+                                          _chip(u.estado.label, c.bg, c.fg)),
                                       DataCell(Row(
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
@@ -183,7 +184,7 @@ class _PersonalTabState extends State<PersonalTab> {
                                             tooltip: 'Editar',
                                             icon: const Icon(
                                                 Icons.edit_outlined,
-                                                color: Colors.white70,
+                                                color: AppColors.textSecondary,
                                                 size: 20),
                                             onPressed: () =>
                                                 _abrirFormulario(usuario: u),
@@ -214,7 +215,20 @@ class _PersonalTabState extends State<PersonalTab> {
   }
 }
 
-/// Chip de estado con relleno sólido (activo) o translúcido (resto).
+({Color bg, Color fg}) _estadoColors(EstadoPersonal estado) {
+  switch (estado) {
+    case EstadoPersonal.activo:
+      return (bg: _accent, fg: Colors.black);
+    case EstadoPersonal.inactivo:
+      return (bg: _panelAlt, fg: AppColors.textSecondary);
+    case EstadoPersonal.suspendido:
+      return (
+        bg: AppColors.danger.withValues(alpha: 0.14),
+        fg: AppColors.danger
+      );
+  }
+}
+
 Widget _chip(String label, Color bg, Color fg) {
   return Container(
     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -227,19 +241,21 @@ Widget _chip(String label, Color bg, Color fg) {
   );
 }
 
-/// Theme local solo para que el DataTable se vea oscuro dentro del panel.
-ThemeData _darkTableTheme(BuildContext context) {
+ThemeData _tableTheme(BuildContext context) {
   final base = Theme.of(context);
   return base.copyWith(
     dataTableTheme: DataTableThemeData(
-      headingRowColor: WidgetStateProperty.all(_darkPanelAlt),
+      headingRowColor: WidgetStateProperty.all(_panelAlt),
       headingTextStyle: const TextStyle(
-          color: Colors.white70, fontWeight: FontWeight.w700, fontSize: 12),
-      dataTextStyle: const TextStyle(color: Colors.white, fontSize: 13),
+          color: AppColors.textSecondary,
+          fontWeight: FontWeight.w700,
+          fontSize: 12),
+      dataTextStyle:
+          const TextStyle(color: AppColors.textPrimary, fontSize: 13),
       dataRowMinHeight: 54,
       dataRowMaxHeight: 60,
-      dividerThickness: 0.4,
+      dividerThickness: 0.6,
     ),
-    dividerColor: Colors.white12,
+    dividerColor: _border,
   );
 }

@@ -11,7 +11,8 @@ const _darkPanel = Color(0xFF16212B);
 const _darkField = Color(0xFF1E2C38);
 
 /// Formulario de alta/edición de vehículo.
-/// Requisitos 2 y 5: alta de vehículo + asignación de responsable (usuario).
+/// Campos alineados al esquema de BD: modelo, marca, color, tipo, placas,
+/// capacidad, estatus, responsable_id.
 class VehiculoFormDialog extends StatefulWidget {
   final Vehiculo? vehiculo;
 
@@ -26,10 +27,10 @@ class VehiculoFormDialog extends StatefulWidget {
 class _VehiculoFormDialogState extends State<VehiculoFormDialog> {
   final _formKey = GlobalKey<FormState>();
 
-  late final TextEditingController _placasCtrl;
   late final TextEditingController _marcaCtrl;
   late final TextEditingController _modeloCtrl;
-  late final TextEditingController _anioCtrl;
+  late final TextEditingController _colorCtrl;
+  late final TextEditingController _placasCtrl;
   late final TextEditingController _capacidadCtrl;
 
   late TipoUnidad _tipo;
@@ -41,23 +42,23 @@ class _VehiculoFormDialogState extends State<VehiculoFormDialog> {
   void initState() {
     super.initState();
     final v = widget.vehiculo;
-    _placasCtrl = TextEditingController(text: v?.placas ?? '');
     _marcaCtrl = TextEditingController(text: v?.marca ?? '');
     _modeloCtrl = TextEditingController(text: v?.modelo ?? '');
-    _anioCtrl = TextEditingController(text: v?.anio.toString() ?? '');
+    _colorCtrl = TextEditingController(text: v?.color ?? '');
+    _placasCtrl = TextEditingController(text: v?.placas ?? '');
     _capacidadCtrl = TextEditingController(
         text: v?.capacidadLitros.toStringAsFixed(0) ?? '');
-    _tipo = v?.tipo ?? TipoUnidad.pipaGrande;
+    _tipo = v?.tipo ?? TipoUnidad.pipa;
     _estado = v?.estado ?? EstadoVehiculo.activo;
     _responsableId = v?.responsableId;
   }
 
   @override
   void dispose() {
-    _placasCtrl.dispose();
     _marcaCtrl.dispose();
     _modeloCtrl.dispose();
-    _anioCtrl.dispose();
+    _colorCtrl.dispose();
+    _placasCtrl.dispose();
     _capacidadCtrl.dispose();
     super.dispose();
   }
@@ -69,10 +70,10 @@ class _VehiculoFormDialogState extends State<VehiculoFormDialog> {
     final provider = context.read<VehiculoProvider>();
     final nuevo = Vehiculo(
       id: widget.vehiculo?.id ?? '',
-      placas: _placasCtrl.text.trim().toUpperCase(),
-      marca: _marcaCtrl.text.trim(),
       modelo: _modeloCtrl.text.trim(),
-      anio: int.parse(_anioCtrl.text.trim()),
+      marca: _marcaCtrl.text.trim(),
+      color: _colorCtrl.text.trim().isEmpty ? null : _colorCtrl.text.trim(),
+      placas: _placasCtrl.text.trim().toUpperCase(),
       capacidadLitros: double.parse(_capacidadCtrl.text.trim()),
       tipo: _tipo,
       estado: _estado,
@@ -161,16 +162,9 @@ class _VehiculoFormDialogState extends State<VehiculoFormDialog> {
                     children: [
                       Expanded(
                         child: TextFormField(
-                          controller: _anioCtrl,
-                          decoration: const InputDecoration(labelText: 'Año'),
-                          keyboardType: TextInputType.number,
-                          validator: (v) {
-                            final n = int.tryParse(v ?? '');
-                            if (n == null || n < 1980 || n > 2100) {
-                              return 'Año inválido';
-                            }
-                            return null;
-                          },
+                          controller: _colorCtrl,
+                          decoration: const InputDecoration(
+                              labelText: 'Color (opcional)'),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -178,7 +172,9 @@ class _VehiculoFormDialogState extends State<VehiculoFormDialog> {
                         child: TextFormField(
                           controller: _capacidadCtrl,
                           decoration: const InputDecoration(
-                              labelText: 'Capacidad (litros)'),
+                            labelText: 'Capacidad',
+                            helperText: 'Litros o toneladas',
+                          ),
                           keyboardType: TextInputType.number,
                           validator: (v) {
                             final n = double.tryParse(v ?? '');
@@ -224,8 +220,7 @@ class _VehiculoFormDialogState extends State<VehiculoFormDialog> {
                       ),
                       ...usuarios.map((Usuario u) => DropdownMenuItem<String?>(
                             value: u.id,
-                            child:
-                                Text('${u.nombreCompleto} · ${u.puesto.label}'),
+                            child: Text('${u.nombreCompleto} · ${u.rol.label}'),
                           )),
                     ],
                     onChanged: (v) => setState(() => _responsableId = v),
@@ -266,9 +261,8 @@ class _VehiculoFormDialogState extends State<VehiculoFormDialog> {
 ThemeData _darkDialogTheme(BuildContext context) {
   final base = Theme.of(context);
   return base.copyWith(
-    textTheme: base.textTheme.apply(
-        bodyColor: const Color.fromARGB(255, 65, 156, 144),
-        displayColor: const Color.fromARGB(255, 43, 112, 117)),
+    textTheme: base.textTheme
+        .apply(bodyColor: Colors.white, displayColor: Colors.white),
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
       fillColor: _darkField,

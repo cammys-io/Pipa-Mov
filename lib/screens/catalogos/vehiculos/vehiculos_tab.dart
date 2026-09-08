@@ -8,8 +8,9 @@ import '../../../providers/vehiculo_provider.dart';
 import 'vehiculo_form_dialog.dart';
 
 const _accent = Color(0xFFCBFF3D);
-const _darkPanel = Color(0xFF16212B);
-const _darkPanelAlt = Color(0xFF1E2C38);
+const _panel = AppColors.surface;
+const _panelAlt = Color(0xFFF1F4F7);
+const _border = Color(0xFFE3E8ED);
 
 class VehiculosTab extends StatefulWidget {
   const VehiculosTab({super.key});
@@ -72,14 +73,14 @@ class _VehiculosTabState extends State<VehiculosTab> {
     switch (estado) {
       case EstadoVehiculo.activo:
         return (bg: _accent, fg: Colors.black);
-      case EstadoVehiculo.mantenimiento:
+      case EstadoVehiculo.taller:
         return (
-          bg: AppColors.warning.withValues(alpha: 0.2),
+          bg: AppColors.warning.withValues(alpha: 0.14),
           fg: AppColors.warning
         );
-      case EstadoVehiculo.fueraDeServicio:
+      case EstadoVehiculo.inactivo:
         return (
-          bg: AppColors.danger.withValues(alpha: 0.2),
+          bg: AppColors.danger.withValues(alpha: 0.14),
           fg: AppColors.danger
         );
     }
@@ -108,20 +109,21 @@ class _VehiculosTabState extends State<VehiculosTab> {
               Expanded(
                 child: Container(
                   decoration: BoxDecoration(
-                    color: _darkPanelAlt,
+                    color: _panelAlt,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: TextField(
-                    style: const TextStyle(color: Colors.white),
+                    style: const TextStyle(color: AppColors.textPrimary),
                     decoration: const InputDecoration(
                       filled: false,
                       border: OutlineInputBorder(
                         borderSide: BorderSide.none,
                         borderRadius: BorderRadius.all(Radius.circular(12)),
                       ),
-                      prefixIcon: Icon(Icons.search, color: Colors.white54),
+                      prefixIcon:
+                          Icon(Icons.search, color: AppColors.textSecondary),
                       hintText: 'Buscar por placas, marca o modelo…',
-                      hintStyle: TextStyle(color: Colors.white38),
+                      hintStyle: TextStyle(color: AppColors.textSecondary),
                     ),
                     onChanged: (v) => setState(() => _busqueda = v),
                   ),
@@ -148,27 +150,29 @@ class _VehiculosTabState extends State<VehiculosTab> {
           Expanded(
             child: Container(
               decoration: BoxDecoration(
-                color: _darkPanel,
+                color: _panel,
                 borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: _border),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.18),
+                    color: Colors.black.withValues(alpha: 0.06),
                     blurRadius: 20,
-                    offset: const Offset(0, 10),
+                    offset: const Offset(0, 8),
                   ),
                 ],
               ),
               child: provider.cargando
                   ? const Center(
-                      child: CircularProgressIndicator(color: _accent))
+                      child:
+                          CircularProgressIndicator(color: AppColors.primary))
                   : vehiculos.isEmpty
                       ? const Center(
                           child: Text('No hay vehículos registrados.',
-                              style: TextStyle(color: Colors.white54)))
+                              style: TextStyle(color: AppColors.textSecondary)))
                       : ClipRRect(
                           borderRadius: BorderRadius.circular(18),
                           child: Theme(
-                            data: _darkTableTheme(context),
+                            data: _tableTheme(context),
                             child: SingleChildScrollView(
                               child: SingleChildScrollView(
                                 scrollDirection: Axis.horizontal,
@@ -177,8 +181,8 @@ class _VehiculosTabState extends State<VehiculosTab> {
                                   columns: const [
                                     DataColumn(label: Text('Placas')),
                                     DataColumn(label: Text('Marca / Modelo')),
-                                    DataColumn(label: Text('Año')),
-                                    DataColumn(label: Text('Capacidad (L)')),
+                                    DataColumn(label: Text('Color')),
+                                    DataColumn(label: Text('Capacidad')),
                                     DataColumn(label: Text('Tipo')),
                                     DataColumn(label: Text('Estado')),
                                     DataColumn(label: Text('Responsable')),
@@ -191,7 +195,7 @@ class _VehiculosTabState extends State<VehiculosTab> {
                                     return DataRow(cells: [
                                       DataCell(Text(v.placas)),
                                       DataCell(Text('${v.marca} ${v.modelo}')),
-                                      DataCell(Text('${v.anio}')),
+                                      DataCell(Text(v.color ?? '—')),
                                       DataCell(Text(v.capacidadLitros
                                           .toStringAsFixed(0))),
                                       DataCell(Text(v.tipo.label)),
@@ -206,7 +210,7 @@ class _VehiculosTabState extends State<VehiculosTab> {
                                             tooltip: 'Editar',
                                             icon: const Icon(
                                                 Icons.edit_outlined,
-                                                color: Colors.white70,
+                                                color: AppColors.textSecondary,
                                                 size: 20),
                                             onPressed: () =>
                                                 _abrirFormulario(vehiculo: v),
@@ -249,18 +253,21 @@ Widget _chip(String label, Color bg, Color fg) {
   );
 }
 
-ThemeData _darkTableTheme(BuildContext context) {
+ThemeData _tableTheme(BuildContext context) {
   final base = Theme.of(context);
   return base.copyWith(
     dataTableTheme: DataTableThemeData(
-      headingRowColor: WidgetStateProperty.all(_darkPanelAlt),
+      headingRowColor: WidgetStateProperty.all(_panelAlt),
       headingTextStyle: const TextStyle(
-          color: Colors.white70, fontWeight: FontWeight.w700, fontSize: 12),
-      dataTextStyle: const TextStyle(color: Colors.white, fontSize: 13),
+          color: AppColors.textSecondary,
+          fontWeight: FontWeight.w700,
+          fontSize: 12),
+      dataTextStyle:
+          const TextStyle(color: AppColors.textPrimary, fontSize: 13),
       dataRowMinHeight: 54,
       dataRowMaxHeight: 60,
-      dividerThickness: 0.4,
+      dividerThickness: 0.6,
     ),
-    dividerColor: Colors.white12,
+    dividerColor: _border,
   );
 }

@@ -23,7 +23,7 @@ class UsuarioProvider extends ChangeNotifier {
   List<Usuario> get choferesYOperadores => _usuarios
       .where((u) =>
           u.estado == EstadoPersonal.activo &&
-          (u.puesto == Puesto.chofer || u.puesto == Puesto.operador))
+          (u.rol == Rol.chofer || u.rol == Rol.operador))
       .toList();
 
   Usuario? porId(String? id) {

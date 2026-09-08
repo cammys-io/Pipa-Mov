@@ -21,9 +21,8 @@ class VehiculoProvider extends ChangeNotifier {
 
   int get totalActivos =>
       _vehiculos.where((v) => v.estado == EstadoVehiculo.activo).length;
-  int get totalMantenimiento => _vehiculos
-      .where((v) => v.estado == EstadoVehiculo.mantenimiento)
-      .length;
+  int get totalTaller =>
+      _vehiculos.where((v) => v.estado == EstadoVehiculo.taller).length;
 
   Future<void> cargar() async {
     _cargando = true;

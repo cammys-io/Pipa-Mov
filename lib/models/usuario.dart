@@ -1,83 +1,75 @@
-/// Modelo de Personal / Usuario.
-///
-/// NOTA: Campos inferidos mientras se confirma el diagrama de BD real.
-/// Cuando tengas el diagrama definitivo, ajusta solo este archivo y
-/// [UsuarioRepository] — el resto de la app (formularios, tablas,
-/// providers) consume estos campos por nombre y no debería requerir
-/// cambios grandes.
-enum Puesto { chofer, operador, supervisor, administrador }
+/// Modelo de Personal / Usuario, alineado al esquema de BD.
+enum Rol { admin, chofer, operador }
 
-enum EstadoPersonal { activo, inactivo }
+enum EstadoPersonal { activo, inactivo, suspendido }
 
-extension PuestoLabel on Puesto {
+extension RolLabel on Rol {
   String get label {
     switch (this) {
-      case Puesto.chofer:
-        return 'Chofer';
-      case Puesto.operador:
-        return 'Operador';
-      case Puesto.supervisor:
-        return 'Supervisor';
-      case Puesto.administrador:
+      case Rol.admin:
         return 'Administrador';
+      case Rol.chofer:
+        return 'Chofer';
+      case Rol.operador:
+        return 'Operador';
     }
   }
 }
 
 extension EstadoPersonalLabel on EstadoPersonal {
-  String get label => this == EstadoPersonal.activo ? 'Activo' : 'Inactivo';
+  String get label {
+    switch (this) {
+      case EstadoPersonal.activo:
+        return 'Activo';
+      case EstadoPersonal.inactivo:
+        return 'Inactivo';
+      case EstadoPersonal.suspendido:
+        return 'Suspendido';
+    }
+  }
 }
 
 class Usuario {
   final String id;
   final String nombre;
-  final String apellidoPaterno;
-  final String apellidoMaterno;
+  final Rol rol;
   final String telefono;
-  final String correo;
-  final Puesto puesto;
   final String? numeroLicencia;
-  final DateTime? vigenciaLicencia;
+  final DateTime? vigencia;
   final EstadoPersonal estado;
   final DateTime fechaRegistro;
 
   Usuario({
     required this.id,
     required this.nombre,
-    required this.apellidoPaterno,
-    required this.apellidoMaterno,
+    required this.rol,
     required this.telefono,
-    required this.correo,
-    required this.puesto,
     this.numeroLicencia,
-    this.vigenciaLicencia,
+    this.vigencia,
     this.estado = EstadoPersonal.activo,
     DateTime? fechaRegistro,
   }) : fechaRegistro = fechaRegistro ?? DateTime.now();
 
-  String get nombreCompleto => '$nombre $apellidoPaterno $apellidoMaterno';
+  /// Se conserva por compatibilidad con el resto de la app
+  /// (tabla, dashboard, dropdown de responsable), que usa
+  /// `nombreCompleto` para mostrar al usuario.
+  String get nombreCompleto => nombre;
 
   Usuario copyWith({
     String? nombre,
-    String? apellidoPaterno,
-    String? apellidoMaterno,
+    Rol? rol,
     String? telefono,
-    String? correo,
-    Puesto? puesto,
     String? numeroLicencia,
-    DateTime? vigenciaLicencia,
+    DateTime? vigencia,
     EstadoPersonal? estado,
   }) {
     return Usuario(
       id: id,
       nombre: nombre ?? this.nombre,
-      apellidoPaterno: apellidoPaterno ?? this.apellidoPaterno,
-      apellidoMaterno: apellidoMaterno ?? this.apellidoMaterno,
+      rol: rol ?? this.rol,
       telefono: telefono ?? this.telefono,
-      correo: correo ?? this.correo,
-      puesto: puesto ?? this.puesto,
       numeroLicencia: numeroLicencia ?? this.numeroLicencia,
-      vigenciaLicencia: vigenciaLicencia ?? this.vigenciaLicencia,
+      vigencia: vigencia ?? this.vigencia,
       estado: estado ?? this.estado,
       fechaRegistro: fechaRegistro,
     );
@@ -86,31 +78,25 @@ class Usuario {
   factory Usuario.fromJson(Map<String, dynamic> json) => Usuario(
         id: json['id'].toString(),
         nombre: json['nombre'] as String,
-        apellidoPaterno: json['apellidoPaterno'] as String,
-        apellidoMaterno: json['apellidoMaterno'] as String,
+        rol: Rol.values.firstWhere((r) => r.name == json['rol']),
         telefono: json['telefono'] as String,
-        correo: json['correo'] as String,
-        puesto: Puesto.values.firstWhere((p) => p.name == json['puesto']),
         numeroLicencia: json['numeroLicencia'] as String?,
-        vigenciaLicencia: json['vigenciaLicencia'] != null
-            ? DateTime.parse(json['vigenciaLicencia'] as String)
+        vigencia: json['vigencia'] != null
+            ? DateTime.parse(json['vigencia'] as String)
             : null,
-        estado: EstadoPersonal.values
-            .firstWhere((e) => e.name == json['estado']),
-        fechaRegistro: DateTime.parse(json['fechaRegistro'] as String),
+        estado:
+            EstadoPersonal.values.firstWhere((e) => e.name == json['estado']),
+        fechaRegistro: DateTime.parse(json['createdAt'] as String),
       );
 
   Map<String, dynamic> toJson() => {
         'id': id,
         'nombre': nombre,
-        'apellidoPaterno': apellidoPaterno,
-        'apellidoMaterno': apellidoMaterno,
+        'rol': rol.name,
         'telefono': telefono,
-        'correo': correo,
-        'puesto': puesto.name,
         'numeroLicencia': numeroLicencia,
-        'vigenciaLicencia': vigenciaLicencia?.toIso8601String(),
+        'vigencia': vigencia?.toIso8601String(),
         'estado': estado.name,
-        'fechaRegistro': fechaRegistro.toIso8601String(),
+        'createdAt': fechaRegistro.toIso8601String(),
       };
 }

@@ -72,8 +72,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   width: cardWidth,
                   icon: Icons.build_rounded,
                   gradient: const [Color(0xFFC77700), Color(0xFF8F5600)],
-                  label: 'En mantenimiento',
-                  value: '${vehiculoProvider.totalMantenimiento}',
+                  label: 'En taller',
+                  value: '${vehiculoProvider.totalTaller}',
                 ),
                 _StatCard(
                   width: cardWidth,
@@ -296,9 +296,9 @@ class _VehiculoTile extends StatelessWidget {
     switch (vehiculo.estado) {
       case EstadoVehiculo.activo:
         return _accent;
-      case EstadoVehiculo.mantenimiento:
+      case EstadoVehiculo.taller:
         return AppColors.warning;
-      case EstadoVehiculo.fueraDeServicio:
+      case EstadoVehiculo.inactivo:
         return AppColors.danger;
     }
   }

@@ -16,24 +16,18 @@ class MockUsuarioRepository implements UsuarioRepository {
   final List<Usuario> _data = [
     Usuario(
       id: '1',
-      nombre: 'Juan',
-      apellidoPaterno: 'Pérez',
-      apellidoMaterno: 'López',
+      nombre: 'Juan Pérez López',
       telefono: '555-101-2020',
-      correo: 'juan.perez@pipamov.com',
-      puesto: Puesto.chofer,
+      rol: Rol.chofer,
       numeroLicencia: 'LIC-00123',
-      vigenciaLicencia: DateTime(2027, 5, 1),
+      vigencia: DateTime(2027, 5, 1),
       estado: EstadoPersonal.activo,
     ),
     Usuario(
       id: '2',
-      nombre: 'María',
-      apellidoPaterno: 'García',
-      apellidoMaterno: 'Torres',
+      nombre: 'María García Torres',
       telefono: '555-202-3030',
-      correo: 'maria.garcia@pipamov.com',
-      puesto: Puesto.administrador,
+      rol: Rol.admin,
       estado: EstadoPersonal.activo,
     ),
   ];
@@ -51,13 +45,10 @@ class MockUsuarioRepository implements UsuarioRepository {
     final conId = Usuario(
       id: DateTime.now().microsecondsSinceEpoch.toString(),
       nombre: nuevo.nombre,
-      apellidoPaterno: nuevo.apellidoPaterno,
-      apellidoMaterno: nuevo.apellidoMaterno,
       telefono: nuevo.telefono,
-      correo: nuevo.correo,
-      puesto: nuevo.puesto,
+      rol: nuevo.rol,
       numeroLicencia: nuevo.numeroLicencia,
-      vigenciaLicencia: nuevo.vigenciaLicencia,
+      vigencia: nuevo.vigencia,
       estado: nuevo.estado,
     );
     _data.add(conId);

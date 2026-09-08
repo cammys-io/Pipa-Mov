@@ -1,22 +1,41 @@
-/// Modelo de Vehículo (pipa de agua).
-///
-/// NOTA: Campos inferidos mientras se confirma el diagrama de BD real.
-/// [responsableId] referencia el id de [Usuario] (FK), igual que
-/// probablemente esté modelado en Postgres.
-enum TipoUnidad { pipaGrande, pipaChica, camionCisterna }
+/// Modelo de Vehículo (pipa de agua), alineado al esquema de BD.
+enum TipoUnidad { pipa, volteo, retro, carroGarrafon }
 
-enum EstadoVehiculo { activo, mantenimiento, fueraDeServicio }
+enum EstadoVehiculo { activo, taller, inactivo }
 
 extension TipoUnidadLabel on TipoUnidad {
   String get label {
     switch (this) {
-      case TipoUnidad.pipaGrande:
-        return 'Pipa grande';
-      case TipoUnidad.pipaChica:
-        return 'Pipa chica';
-      case TipoUnidad.camionCisterna:
-        return 'Camión cisterna';
+      case TipoUnidad.pipa:
+        return 'Pipa';
+      case TipoUnidad.volteo:
+        return 'Volteo';
+      case TipoUnidad.retro:
+        return 'Retro';
+      case TipoUnidad.carroGarrafon:
+        return 'Carro garrafón';
     }
+  }
+
+  /// Valor tal cual lo espera la BD (snake_case).
+  String get dbValue {
+    switch (this) {
+      case TipoUnidad.pipa:
+        return 'pipa';
+      case TipoUnidad.volteo:
+        return 'volteo';
+      case TipoUnidad.retro:
+        return 'retro';
+      case TipoUnidad.carroGarrafon:
+        return 'carro_garrafon';
+    }
+  }
+
+  static TipoUnidad fromDbValue(String value) {
+    return TipoUnidad.values.firstWhere(
+      (t) => t.dbValue == value,
+      orElse: () => TipoUnidad.pipa,
+    );
   }
 }
 
@@ -25,58 +44,59 @@ extension EstadoVehiculoLabel on EstadoVehiculo {
     switch (this) {
       case EstadoVehiculo.activo:
         return 'Activo';
-      case EstadoVehiculo.mantenimiento:
-        return 'Mantenimiento';
-      case EstadoVehiculo.fueraDeServicio:
-        return 'Fuera de servicio';
+      case EstadoVehiculo.taller:
+        return 'Taller';
+      case EstadoVehiculo.inactivo:
+        return 'Inactivo';
     }
   }
 }
 
 class Vehiculo {
   final String id;
-  final String placas;
-  final String marca;
   final String modelo;
-  final int anio;
-  final double capacidadLitros;
+  final String marca;
+  final String? color; // nullable, según BD
   final TipoUnidad tipo;
-  final EstadoVehiculo estado;
-  final String? responsableId; // FK -> Usuario.id
-  final DateTime fechaRegistro;
+  final String placas;
+  final double capacidadLitros; // BD: capacidad (float)
+  final EstadoVehiculo estado; // BD: estatus
+  final String? responsableId; // FK -> Usuario.id (BD: responsable_id)
+  final DateTime fechaRegistro; // BD: createdAt
 
   Vehiculo({
     required this.id,
-    required this.placas,
-    required this.marca,
     required this.modelo,
-    required this.anio,
-    required this.capacidadLitros,
+    required this.marca,
+    this.color,
     required this.tipo,
+    required this.placas,
+    required this.capacidadLitros,
     this.estado = EstadoVehiculo.activo,
     this.responsableId,
     DateTime? fechaRegistro,
   }) : fechaRegistro = fechaRegistro ?? DateTime.now();
 
   Vehiculo copyWith({
-    String? placas,
-    String? marca,
     String? modelo,
-    int? anio,
-    double? capacidadLitros,
+    String? marca,
+    String? color,
+    bool clearColor = false,
     TipoUnidad? tipo,
+    String? placas,
+    double? capacidadLitros,
     EstadoVehiculo? estado,
     String? responsableId,
     bool clearResponsable = false,
   }) {
     return Vehiculo(
       id: id,
-      placas: placas ?? this.placas,
-      marca: marca ?? this.marca,
       modelo: modelo ?? this.modelo,
-      anio: anio ?? this.anio,
-      capacidadLitros: capacidadLitros ?? this.capacidadLitros,
+      marca: marca ?? this.marca,
+      color: clearColor ? null : (color ?? this.color),
       tipo: tipo ?? this.tipo,
+      placas: placas ?? this.placas,
+      capacidadLitros: capacidadLitros ?? this.capacidadLitros,
       estado: estado ?? this.estado,
       responsableId:
           clearResponsable ? null : (responsableId ?? this.responsableId),
@@ -86,28 +106,28 @@ class Vehiculo {
 
   factory Vehiculo.fromJson(Map<String, dynamic> json) => Vehiculo(
         id: json['id'].toString(),
-        placas: json['placas'] as String,
-        marca: json['marca'] as String,
         modelo: json['modelo'] as String,
-        anio: json['anio'] as int,
-        capacidadLitros: (json['capacidadLitros'] as num).toDouble(),
-        tipo: TipoUnidad.values.firstWhere((t) => t.name == json['tipo']),
-        estado: EstadoVehiculo.values
-            .firstWhere((e) => e.name == json['estado']),
-        responsableId: json['responsableId']?.toString(),
-        fechaRegistro: DateTime.parse(json['fechaRegistro'] as String),
+        marca: json['marca'] as String,
+        color: json['color'] as String?,
+        tipo: TipoUnidadLabel.fromDbValue(json['tipo'] as String),
+        placas: json['placas'] as String,
+        capacidadLitros: (json['capacidad'] as num).toDouble(),
+        estado:
+            EstadoVehiculo.values.firstWhere((e) => e.name == json['estatus']),
+        responsableId: json['responsable_id']?.toString(),
+        fechaRegistro: DateTime.parse(json['createdAt'] as String),
       );
 
   Map<String, dynamic> toJson() => {
         'id': id,
-        'placas': placas,
-        'marca': marca,
         'modelo': modelo,
-        'anio': anio,
-        'capacidadLitros': capacidadLitros,
-        'tipo': tipo.name,
-        'estado': estado.name,
-        'responsableId': responsableId,
-        'fechaRegistro': fechaRegistro.toIso8601String(),
+        'marca': marca,
+        'color': color,
+        'tipo': tipo.dbValue,
+        'placas': placas,
+        'capacidad': capacidadLitros,
+        'estatus': estado.name,
+        'responsable_id': responsableId,
+        'createdAt': fechaRegistro.toIso8601String(),
       };
 }
