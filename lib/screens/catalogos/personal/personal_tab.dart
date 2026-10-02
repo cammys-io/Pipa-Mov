@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../../models/usuario.dart';
+import '../../../models/vehiculo.dart';
 import '../../../providers/usuario_provider.dart';
 import 'personal_form_dialog.dart';
 
@@ -65,6 +66,119 @@ class _PersonalTabState extends State<PersonalTab> {
         ));
       }
     }
+  }
+
+  Future<void> _mostrarDetalles(Usuario usuario) async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => const AlertDialog(
+        content: SizedBox(
+            height: 100,
+            child: Center(child: CircularProgressIndicator(color: AppColors.primary))),
+      ),
+    );
+
+    final details = await context.read<UsuarioProvider>().obtenerDetallesVehiculos(usuario.id);
+    if (!mounted) return;
+    Navigator.pop(context); // Cerrar loading
+
+    if (details == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Error al obtener detalles del usuario')));
+      return;
+    }
+
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        final vehiculos = details['vehiculosAsignados'] as List<dynamic>? ?? [];
+        return AlertDialog(
+          title: Text('Detalles: ${usuario.nombreCompleto}'),
+          content: SizedBox(
+            width: 400,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Rol: ${usuario.rol.label}', style: const TextStyle(fontSize: 14)),
+                  Text('Teléfono: ${usuario.telefono}', style: const TextStyle(fontSize: 14)),
+                  Text('Licencia: ${usuario.numeroLicencia ?? '—'}', style: const TextStyle(fontSize: 14)),
+                  const SizedBox(height: 16),
+                  const Text('Vehículos asignados:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  const SizedBox(height: 8),
+                  if (vehiculos.isEmpty)
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: _panelAlt,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Row(
+                        children: [
+                          Icon(Icons.info_outline, color: AppColors.textSecondary, size: 18),
+                          SizedBox(width: 8),
+                          Text('Sin vehículo asignado', style: TextStyle(color: AppColors.textSecondary, fontStyle: FontStyle.italic)),
+                        ],
+                      ),
+                    )
+                  else
+                    ...vehiculos.map((vMap) {
+                          final v = Vehiculo.fromJson(vMap as Map<String, dynamic>);
+                          return Card(
+                            elevation: 0,
+                            color: _panelAlt,
+                            margin: const EdgeInsets.only(bottom: 8),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            child: Padding(
+                              padding: const EdgeInsets.all(12.0),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      const Icon(Icons.local_shipping, color: AppColors.textSecondary, size: 20),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Text(
+                                          '${v.marca} ${v.modelo}',
+                                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                                        ),
+                                      ),
+                                      Text(
+                                        v.estado.label,
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          color: v.estado == EstadoVehiculo.activo ? Colors.green[700] : AppColors.danger,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text('Placas: ${v.placas}', style: const TextStyle(fontSize: 13)),
+                                  Text('Tipo: ${v.tipo.label}', style: const TextStyle(fontSize: 13)),
+                                  Text('Capacidad: ${v.capacidadLitros.toStringAsFixed(0)} L', style: const TextStyle(fontSize: 13)),
+                                  Text('Color: ${v.color ?? '—'}', style: const TextStyle(fontSize: 13)),
+                                ],
+                              ),
+                            ),
+                          );
+                        }),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cerrar'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -180,6 +294,14 @@ class _PersonalTabState extends State<PersonalTab> {
                                       DataCell(Row(
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
+                                          IconButton(
+                                            tooltip: 'Detalles',
+                                            icon: const Icon(
+                                                Icons.info_outline,
+                                                color: AppColors.textPrimary,
+                                                size: 20),
+                                            onPressed: () => _mostrarDetalles(u),
+                                          ),
                                           IconButton(
                                             tooltip: 'Editar',
                                             icon: const Icon(

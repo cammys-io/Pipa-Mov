@@ -104,20 +104,50 @@ class Vehiculo {
     );
   }
 
-  factory Vehiculo.fromJson(Map<String, dynamic> json) => Vehiculo(
-        id: json['id'].toString(),
-        modelo: json['modelo'] as String,
-        marca: json['marca'] as String,
-        color: json['color'] as String?,
-        tipo: TipoUnidadLabel.fromDbValue(json['tipo'] as String),
-        placas: json['placas'] as String,
-        capacidadLitros: (json['capacidad'] as num).toDouble(),
-        estado:
-            EstadoVehiculo.values.firstWhere((e) => e.name == json['estatus']),
-        responsableId: json['responsable_id']?.toString(),
-        fechaRegistro: DateTime.parse(json['createdAt'] as String),
-      );
+  /// Construye un Vehiculo a partir del JSON que retorna el backend NestJS.
+  ///
+  /// Se manejan dos escenarios distintos de respuesta:
+  /// 1. Respuesta completa (create, findOne): incluye todos los campos,
+  ///    incluyendo responsableId y createdAt.
+  /// 2. Respuesta parcial (findAll con select): no incluye createdAt,
+  ///    y en vez de responsableId retorna un objeto anidado 'responsable'
+  ///    con el nombre y posiblemente el id del usuario asignado.
+  ///
+  /// Tambien se maneja que 'capacidad' pueda llegar como string desde
+  /// PostgreSQL (columna de tipo decimal), por lo que se usa toString()
+  /// antes de parsear a double para cubrir ambos casos.
+  factory Vehiculo.fromJson(Map<String, dynamic> json) {
+    // El backend retorna responsableId en camelCase cuando devuelve la entidad
+    // completa. En findAll (con select y relations), retorna un objeto anidado
+    // 'responsable' que puede contener el id del usuario asignado.
+    String? resId = json['responsableId']?.toString();
+    if (resId == null && json['responsable'] is Map) {
+      resId = (json['responsable'] as Map)['id']?.toString();
+    }
 
+    return Vehiculo(
+      id: json['id'].toString(),
+      modelo: json['modelo'] as String,
+      marca: json['marca'] as String,
+      color: json['color'] as String?,
+      tipo: TipoUnidadLabel.fromDbValue(json['tipo'] as String),
+      placas: json['placas'] as String,
+      // Se usa toString() antes de parsear porque PostgreSQL decimal
+      // puede serializar como string en vez de numero.
+      capacidadLitros: double.parse(json['capacidad'].toString()),
+      estado:
+          EstadoVehiculo.values.firstWhere((e) => e.name == json['estatus']),
+      responsableId: resId,
+      // createdAt no esta presente en la respuesta de findAll (no se incluye
+      // en el select del backend), asi que se usa la fecha actual como fallback.
+      fechaRegistro: json['createdAt'] != null
+          ? DateTime.parse(json['createdAt'] as String)
+          : DateTime.now(),
+    );
+  }
+
+  /// Serializa el vehiculo completo a JSON, incluyendo id y fecha de registro.
+  /// Se usa para representacion interna y almacenamiento local.
   Map<String, dynamic> toJson() => {
         'id': id,
         'modelo': modelo,
@@ -127,7 +157,28 @@ class Vehiculo {
         'placas': placas,
         'capacidad': capacidadLitros,
         'estatus': estado.name,
-        'responsable_id': responsableId,
+        'responsableId': responsableId,
         'createdAt': fechaRegistro.toIso8601String(),
       };
+
+  /// Serializa solo los campos que acepta el DTO del backend para crear
+  /// o actualizar un vehiculo. Excluye 'id' y 'createdAt' porque el backend
+  /// los genera automaticamente y rechaza campos no definidos en el DTO
+  /// (tiene configurado forbidNonWhitelisted: true en el ValidationPipe).
+  ///
+  /// Los campos opcionales (color, responsableId) solo se incluyen si
+  /// tienen un valor distinto de null, evitando enviar datos innecesarios.
+  Map<String, dynamic> toCreateJson() {
+    final json = <String, dynamic>{
+      'modelo': modelo,
+      'marca': marca,
+      'tipo': tipo.dbValue,
+      'placas': placas,
+      'capacidad': capacidadLitros,
+      'estatus': estado.name,
+    };
+    if (color != null) json['color'] = color;
+    if (responsableId != null) json['responsableId'] = responsableId;
+    return json;
+  }
 }

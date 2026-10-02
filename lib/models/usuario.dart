@@ -39,6 +39,15 @@ class Usuario {
   final EstadoPersonal estado;
   final DateTime fechaRegistro;
 
+  /// Email del usuario. Solo los usuarios con rol admin requieren email
+  /// para poder autenticarse en el sistema.
+  final String? email;
+
+  /// Contraseña en texto plano. Se usa SOLO al momento de crear o editar
+  /// un usuario admin. El backend la hashea con bcrypt antes de guardarla.
+  /// Nunca se recibe del backend (el campo tiene select: false en TypeORM).
+  final String? password;
+
   Usuario({
     required this.id,
     required this.nombre,
@@ -48,6 +57,8 @@ class Usuario {
     this.vigencia,
     this.estado = EstadoPersonal.activo,
     DateTime? fechaRegistro,
+    this.email,
+    this.password,
   }) : fechaRegistro = fechaRegistro ?? DateTime.now();
 
   /// Se conserva por compatibilidad con el resto de la app
@@ -62,6 +73,8 @@ class Usuario {
     String? numeroLicencia,
     DateTime? vigencia,
     EstadoPersonal? estado,
+    String? email,
+    String? password,
   }) {
     return Usuario(
       id: id,
@@ -72,6 +85,8 @@ class Usuario {
       vigencia: vigencia ?? this.vigencia,
       estado: estado ?? this.estado,
       fechaRegistro: fechaRegistro,
+      email: email ?? this.email,
+      password: password ?? this.password,
     );
   }
 
@@ -87,8 +102,12 @@ class Usuario {
         estado:
             EstadoPersonal.values.firstWhere((e) => e.name == json['estado']),
         fechaRegistro: DateTime.parse(json['createdAt'] as String),
+        email: json['email'] as String?,
+        // password nunca viene del backend (select: false)
       );
 
+  /// Serializa el usuario completo a JSON, incluyendo id y fecha de registro.
+  /// Se usa para representacion interna y almacenamiento local.
   Map<String, dynamic> toJson() => {
         'id': id,
         'nombre': nombre,
@@ -97,6 +116,33 @@ class Usuario {
         'numeroLicencia': numeroLicencia,
         'vigencia': vigencia?.toIso8601String(),
         'estado': estado.name,
+        'email': email,
         'createdAt': fechaRegistro.toIso8601String(),
       };
+
+  /// Serializa solo los campos que acepta el DTO del backend para crear
+  /// o actualizar un usuario. Excluye 'id' y 'createdAt' porque el backend
+  /// los genera automaticamente y rechaza campos no definidos en el DTO
+  /// (tiene configurado forbidNonWhitelisted: true en el ValidationPipe).
+  ///
+  /// Los campos opcionales (numeroLicencia, vigencia, email, password) solo
+  /// se incluyen si tienen un valor distinto de null, evitando enviar datos
+  /// innecesarios.
+  ///
+  /// Para usuarios admin, se incluyen email y password (el backend hashea
+  /// la contraseña con bcrypt). Para roles no-admin, el backend ignora/limpia
+  /// el password aunque se envíe.
+  Map<String, dynamic> toCreateJson() {
+    final json = <String, dynamic>{
+      'nombre': nombre,
+      'rol': rol.name,
+      'telefono': telefono,
+      'estado': estado.name,
+    };
+    if (numeroLicencia != null) json['numeroLicencia'] = numeroLicencia;
+    if (vigencia != null) json['vigencia'] = vigencia!.toIso8601String();
+    if (email != null && email!.isNotEmpty) json['email'] = email;
+    if (password != null && password!.isNotEmpty) json['password'] = password;
+    return json;
+  }
 }

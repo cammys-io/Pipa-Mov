@@ -84,4 +84,12 @@ class UsuarioProvider extends ChangeNotifier {
       return false;
     }
   }
+
+  Future<Map<String, dynamic>?> obtenerDetallesVehiculos(String id) async {
+    try {
+      return await _repository.obtenerConVehiculos(id);
+    } catch (e) {
+      return null;
+    }
+  }
 }

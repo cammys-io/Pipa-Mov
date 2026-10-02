@@ -11,6 +11,11 @@ const _darkField = Color(0xFF1E2C38);
 /// Formulario de alta/edición de personal.
 /// Campos alineados al esquema de BD: nombre, rol, telefono,
 /// numeroLicencia, vigencia, estado.
+///
+/// Cuando el rol seleccionado es 'admin', se muestran campos adicionales
+/// de email y contraseña para que el usuario pueda autenticarse.
+/// El backend hashea la contraseña con bcrypt; si el rol no es admin,
+/// el backend ignora/limpia el password.
 class PersonalFormDialog extends StatefulWidget {
   final Usuario? usuario;
 
@@ -28,13 +33,17 @@ class _PersonalFormDialogState extends State<PersonalFormDialog> {
   late final TextEditingController _nombreCtrl;
   late final TextEditingController _telefonoCtrl;
   late final TextEditingController _licenciaCtrl;
+  late final TextEditingController _emailCtrl;
+  late final TextEditingController _passwordCtrl;
 
   late Rol _rol;
   late EstadoPersonal _estado;
   DateTime? _vigencia;
   bool _guardando = false;
+  bool _ocultarPassword = true;
 
   bool get _requiereLicencia => _rol == Rol.chofer || _rol == Rol.operador;
+  bool get _esAdmin => _rol == Rol.admin;
 
   @override
   void initState() {
@@ -43,6 +52,8 @@ class _PersonalFormDialogState extends State<PersonalFormDialog> {
     _nombreCtrl = TextEditingController(text: u?.nombre ?? '');
     _telefonoCtrl = TextEditingController(text: u?.telefono ?? '');
     _licenciaCtrl = TextEditingController(text: u?.numeroLicencia ?? '');
+    _emailCtrl = TextEditingController(text: u?.email ?? '');
+    _passwordCtrl = TextEditingController();
     _rol = u?.rol ?? Rol.chofer;
     _estado = u?.estado ?? EstadoPersonal.activo;
     _vigencia = u?.vigencia;
@@ -53,6 +64,8 @@ class _PersonalFormDialogState extends State<PersonalFormDialog> {
     _nombreCtrl.dispose();
     _telefonoCtrl.dispose();
     _licenciaCtrl.dispose();
+    _emailCtrl.dispose();
+    _passwordCtrl.dispose();
     super.dispose();
   }
 
@@ -82,6 +95,13 @@ class _PersonalFormDialogState extends State<PersonalFormDialog> {
       vigencia: _requiereLicencia ? _vigencia : null,
       estado: _estado,
       fechaRegistro: widget.usuario?.fechaRegistro,
+      // Solo incluir email y password para admins
+      email: _esAdmin && _emailCtrl.text.trim().isNotEmpty
+          ? _emailCtrl.text.trim()
+          : null,
+      password: _esAdmin && _passwordCtrl.text.isNotEmpty
+          ? _passwordCtrl.text
+          : null,
     );
 
     final ok = widget.esEdicion
@@ -176,6 +196,74 @@ class _PersonalFormDialogState extends State<PersonalFormDialog> {
                           style: const TextStyle(color: Colors.white),
                         ),
                       ),
+                    ),
+                  ],
+                  // ─── Campos exclusivos para admin ───
+                  if (_esAdmin) ...[
+                    const SizedBox(height: 16),
+                    const Divider(color: Colors.white12),
+                    const SizedBox(height: 4),
+                    const Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        'Credenciales de acceso',
+                        style: TextStyle(
+                          color: _accent,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: _emailCtrl,
+                      decoration: const InputDecoration(
+                        labelText: 'Correo electrónico',
+                        prefixIcon: Icon(Icons.email_outlined,
+                            color: Colors.white38, size: 20),
+                      ),
+                      keyboardType: TextInputType.emailAddress,
+                      validator: (v) {
+                        if (!_esAdmin) return null;
+                        if (v == null || v.trim().isEmpty) {
+                          return 'Requerido para administradores';
+                        }
+                        if (!v.contains('@')) return 'Correo no válido';
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: _passwordCtrl,
+                      obscureText: _ocultarPassword,
+                      decoration: InputDecoration(
+                        labelText: widget.esEdicion
+                            ? 'Nueva contraseña (dejar vacío para mantener)'
+                            : 'Contraseña',
+                        prefixIcon: const Icon(Icons.lock_outline,
+                            color: Colors.white38, size: 20),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _ocultarPassword
+                                ? Icons.visibility_off
+                                : Icons.visibility,
+                            color: Colors.white38,
+                            size: 20,
+                          ),
+                          onPressed: () => setState(
+                              () => _ocultarPassword = !_ocultarPassword),
+                        ),
+                      ),
+                      validator: (v) {
+                        if (!_esAdmin) return null;
+                        // En edición, el password es opcional (mantiene el actual)
+                        if (widget.esEdicion) return null;
+                        if (v == null || v.isEmpty) {
+                          return 'Requerido para administradores';
+                        }
+                        if (v.length < 6) return 'Mínimo 6 caracteres';
+                        return null;
+                      },
                     ),
                   ],
                   const SizedBox(height: 12),

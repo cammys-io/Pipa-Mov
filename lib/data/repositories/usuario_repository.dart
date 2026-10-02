@@ -10,6 +10,7 @@ abstract class UsuarioRepository {
   Future<Usuario> crear(Usuario usuario);
   Future<Usuario> actualizar(Usuario usuario);
   Future<void> eliminar(String id);
+  Future<Map<String, dynamic>> obtenerConVehiculos(String id);
 }
 
 class MockUsuarioRepository implements UsuarioRepository {
@@ -70,5 +71,19 @@ class MockUsuarioRepository implements UsuarioRepository {
   Future<void> eliminar(String id) async {
     await Future.delayed(const Duration(milliseconds: 200));
     _data.removeWhere((u) => u.id == id);
+  }
+
+  @override
+  Future<Map<String, dynamic>> obtenerConVehiculos(String id) async {
+    await Future.delayed(const Duration(milliseconds: 200));
+    final user = _data.firstWhere((u) => u.id == id);
+    return {
+      'id': user.id,
+      'nombre': user.nombre,
+      'numeroLicencia': user.numeroLicencia,
+      'vigencia': user.vigencia?.toIso8601String(),
+      'estado': user.estado.name,
+      'vehiculosAsignados': [],
+    };
   }
 }

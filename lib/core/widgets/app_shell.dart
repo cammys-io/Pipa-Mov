@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:go_router/go_router.dart';
 
-import '../../screens/catalogos/catalogos_screen.dart';
-import '../../screens/dashboard/dashboard_screen.dart';
+import '../../providers/auth_provider.dart';
 import '../theme/app_theme.dart';
 
 const _accent = Color(0xFFCBFF3D);
@@ -10,23 +11,22 @@ const _darkPanel = Color(0xFF16212B);
 const _destinationsList = [
   _NavItem('Dashboard', Icons.dashboard_rounded),
   _NavItem('Catálogos y Admin', Icons.inventory_2_rounded),
+  _NavItem('Finanzas', Icons.attach_money_rounded),
 ];
 
 /// Shell principal: sidebar de navegación + contenido.
-class AppShell extends StatefulWidget {
-  const AppShell({super.key});
+class AppShell extends StatelessWidget {
+  final StatefulNavigationShell navigationShell;
 
-  @override
-  State<AppShell> createState() => _AppShellState();
-}
+  const AppShell({super.key, required this.navigationShell});
 
-class _AppShellState extends State<AppShell> {
-  int _index = 0;
-
-  final _pages = const [
-    DashboardScreen(),
-    CatalogosScreen(),
-  ];
+  void _onNavigate(int index) {
+    navigationShell.goBranch(
+      index,
+      // Soporta "volver al inicio" del tab si tocas el mismo ícono de nuevo
+      initialLocation: index == navigationShell.currentIndex,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -38,8 +38,46 @@ class _AppShellState extends State<AppShell> {
         children: [
           if (isWide)
             _Sidebar(
-                index: _index, onSelect: (i) => setState(() => _index = i)),
-          Expanded(child: _pages[_index]),
+                index: navigationShell.currentIndex,
+                onSelect: _onNavigate),
+          Expanded(
+            child: Column(
+              children: [
+                // AppBar compacto con logout solo en pantallas angostas
+                if (!isWide)
+                  Container(
+                    color: _darkPanel,
+                    padding: const EdgeInsets.only(
+                        left: 16, right: 4, top: 8, bottom: 8),
+                    child: SafeArea(
+                      bottom: false,
+                      child: Row(
+                        children: [
+                          const Icon(Icons.local_shipping_rounded,
+                              color: _accent, size: 20),
+                          const SizedBox(width: 8),
+                          const Text('Pipas',
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 15)),
+                          const Spacer(),
+                          Consumer<AuthProvider>(
+                            builder: (context, auth, _) => IconButton(
+                              icon: const Icon(Icons.logout_rounded,
+                                  color: Colors.white54, size: 20),
+                              tooltip: 'Cerrar sesión',
+                              onPressed: () => auth.logout(),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                Expanded(child: navigationShell),
+              ],
+            ),
+          ),
         ],
       ),
       bottomNavigationBar: isWide
@@ -74,8 +112,8 @@ class _AppShellState extends State<AppShell> {
                   }),
                 ),
                 child: NavigationBar(
-                  selectedIndex: _index,
-                  onDestinationSelected: (i) => setState(() => _index = i),
+                  selectedIndex: navigationShell.currentIndex,
+                  onDestinationSelected: _onNavigate,
                   destinations: _destinationsList
                       .map((d) => NavigationDestination(
                             icon: Icon(d.icon),
@@ -145,6 +183,81 @@ class _Sidebar extends StatelessWidget {
             ),
             const SizedBox(height: 6),
           ],
+          const Spacer(),
+          // Sección de logout
+          Consumer<AuthProvider>(
+            builder: (context, auth, _) => Column(
+              children: [
+                const Divider(color: Colors.white12, height: 1),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        color: _accent.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(Icons.person_rounded,
+                          color: _accent, size: 18),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        auth.email ?? 'Admin',
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 11,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        maxLines: 1,
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.logout_rounded,
+                          color: Colors.white54, size: 20),
+                      tooltip: 'Cerrar sesión',
+                      onPressed: () => _confirmarLogout(context, auth),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _confirmarLogout(BuildContext context, AuthProvider auth) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: _darkPanel,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Cerrar sesión',
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+        content: const Text('¿Estás seguro de que deseas salir?',
+            style: TextStyle(color: Colors.white70)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            style: TextButton.styleFrom(foregroundColor: Colors.white60),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.danger,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10)),
+            ),
+            onPressed: () {
+              Navigator.pop(ctx);
+              auth.logout();
+            },
+            child: const Text('Salir'),
+          ),
         ],
       ),
     );
