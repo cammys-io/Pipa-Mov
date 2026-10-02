@@ -1,21 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
 import '../../core/theme/app_theme.dart';
-import '../../models/usuario.dart';
+import '../../core/widgets/movimientos_table.dart';
+import '../../core/widgets/section_widgets.dart';
+import '../../models/filtro_movimientos.dart';
 import '../../models/vehiculo.dart';
+import '../../providers/movimiento_provider.dart';
 import '../../providers/usuario_provider.dart';
 import '../../providers/vehiculo_provider.dart';
 
-/// Acento vibrante solo para este dashboard (estilo panel oscuro).
-/// Si te gusta, muévelo a AppColors para reusarlo en otras pantallas.
-const _accent = Color(0xFFCBFF3D);
-const _darkPanel = Color(0xFF16212B);
-const _darkPanelAlt = Color(0xFF1E2C38);
-
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
-
   @override
   State<DashboardScreen> createState() => _DashboardScreenState();
 }
@@ -25,339 +20,208 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<VehiculoProvider>().cargar();
-      context.read<UsuarioProvider>().cargar();
+      if (mounted) _cargar();
     });
   }
 
+  Future<void> _cargar() async {
+    final vehiculos = context.read<VehiculoProvider>();
+    final usuarios = context.read<UsuarioProvider>();
+    final movimientos = context.read<MovimientoProvider>();
+    await Future.wait([
+      vehiculos.cargar(),
+      usuarios.cargar(),
+      movimientos.cargar(),
+    ]);
+  }
+
   @override
   Widget build(BuildContext context) {
-    final vehiculoProvider = context.watch<VehiculoProvider>();
-    final usuarioProvider = context.watch<UsuarioProvider>();
-    final width = MediaQuery.of(context).size.width;
-    final cardWidth = width < 420 ? (width - 52) / 2 : 230.0;
-
+    final vehiculos = context.watch<VehiculoProvider>();
+    final usuarios = context.watch<UsuarioProvider>();
+    final provider = context.watch<MovimientoProvider>();
+    final ahora = DateTime.now();
+    final movimientos = FiltroMovimientos(
+      desde: DateTime(ahora.year, ahora.month),
+      hasta: DateTime(ahora.year, ahora.month + 1, 0),
+    ).aplicar(provider.movimientos);
+    final totales = TotalesMovimientos.de(movimientos);
+    final recientes = const FiltroMovimientos()
+        .aplicar(provider.movimientos)
+        .take(5)
+        .toList();
+    final unidades = [...vehiculos.vehiculos]
+      ..sort((a, b) => b.fechaRegistro.compareTo(a.fechaRegistro));
     return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(title: const Text('Dashboard')),
+      appBar: AppBar(
+        title: const Text('Resumen general'),
+        actions: [
+          IconButton(
+            tooltip: 'Actualizar',
+            onPressed: _cargar,
+            icon: const Icon(Icons.refresh),
+          ),
+          const SizedBox(width: 12),
+        ],
+      ),
       body: RefreshIndicator(
-        onRefresh: () async {
-          await vehiculoProvider.cargar();
-          await usuarioProvider.cargar();
-        },
+        onRefresh: _cargar,
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(20),
           children: [
-            const _Header(),
-            const SizedBox(height: 20),
-            Wrap(
-              spacing: 14,
-              runSpacing: 14,
+            const Text(
+              'Tu operación, en un solo lugar.',
+              style: TextStyle(fontSize: 16, color: AppColors.textSecondary),
+            ),
+            const SizedBox(height: 16),
+            const Card(
+              child: Padding(
+                padding: EdgeInsets.all(14),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.info_outline,
+                      size: 20,
+                      color: AppColors.textSecondary,
+                    ),
+                    SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        'Sin conexión al servidor. Los registros y adjuntos se conservan solo durante esta sesión.',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              'Actividad del mes',
+              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 18),
+            ),
+            const SizedBox(height: 12),
+            SummaryGrid(
               children: [
-                _StatCard(
-                  width: cardWidth,
-                  icon: Icons.local_shipping_rounded,
-                  gradient: const [Color(0xFF0B6E99), Color(0xFF084F70)],
-                  label: 'Vehículos registrados',
-                  value: '${vehiculoProvider.vehiculos.length}',
+                SummaryCard(
+                  label: 'Ingresos',
+                  value: dinero(totales.ingresos),
+                  icon: Icons.south_west,
+                  color: AppColors.success,
                 ),
-                _StatCard(
-                  width: cardWidth,
-                  icon: Icons.verified_rounded,
-                  gradient: const [Color(0xFF1E8E5A), Color(0xFF146642)],
-                  label: 'Vehículos activos',
-                  value: '${vehiculoProvider.totalActivos}',
+                SummaryCard(
+                  label: 'Gastos',
+                  value: dinero(totales.gastos),
+                  icon: Icons.north_east,
+                  color: AppColors.warning,
                 ),
-                _StatCard(
-                  width: cardWidth,
-                  icon: Icons.build_rounded,
-                  gradient: const [Color(0xFFC77700), Color(0xFF8F5600)],
-                  label: 'En taller',
-                  value: '${vehiculoProvider.totalTaller}',
-                ),
-                _StatCard(
-                  width: cardWidth,
-                  icon: Icons.groups_rounded,
-                  gradient: const [_darkPanelAlt, _darkPanel],
-                  label: 'Personal registrado',
-                  value: '${usuarioProvider.usuarios.length}',
-                  accentIcon: true,
+                SummaryCard(
+                  label: 'Balance',
+                  value: dinero(totales.balance),
+                  icon: Icons.account_balance_wallet_outlined,
                 ),
               ],
             ),
+            const SizedBox(height: 16),
+            SummaryGrid(
+              children: [
+                SummaryCard(
+                  label: 'Vehículos activos',
+                  value:
+                      '${vehiculos.totalActivos} / ${vehiculos.vehiculos.length}',
+                  icon: Icons.local_shipping_outlined,
+                ),
+                SummaryCard(
+                  label: 'Unidades en taller',
+                  value: '${vehiculos.totalTaller}',
+                  icon: Icons.build_outlined,
+                  color: AppColors.warning,
+                ),
+                SummaryCard(
+                  label: 'Personal registrado',
+                  value: '${usuarios.usuarios.length}',
+                  icon: Icons.groups_outlined,
+                ),
+              ],
+            ),
+            if (vehiculos.cargando || usuarios.cargando || provider.cargando)
+              const Padding(
+                padding: EdgeInsets.only(top: 16),
+                child: LinearProgressIndicator(),
+              ),
+            for (final error in [
+              vehiculos.error,
+              usuarios.error,
+              provider.error,
+            ])
+              if (error != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 12),
+                  child: Text(
+                    error,
+                    style: const TextStyle(color: AppColors.danger),
+                  ),
+                ),
             const SizedBox(height: 28),
-            _VehiculosPanel(
-              vehiculos: vehiculoProvider.vehiculos.take(5).toList(),
-              usuarioProvider: usuarioProvider,
+            const Text(
+              'Últimos movimientos',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 12),
+            MovimientosTable(movimientos: recientes),
+            const SizedBox(height: 28),
+            const Text(
+              'Flotilla reciente',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 12),
+            Card(
+              child: unidades.isEmpty
+                  ? const EmptyState(
+                      title: 'Tu flotilla está vacía',
+                      message:
+                          'Agrega vehículos y maquinaria desde Catálogos para comenzar.',
+                    )
+                  : Column(
+                      children: [
+                        for (final v in unidades.take(5))
+                          ListTile(
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 20,
+                              vertical: 8,
+                            ),
+                            leading: const Icon(
+                              Icons.local_shipping_outlined,
+                              color: AppColors.primary,
+                            ),
+                            title: Text(
+                              '${v.marca} ${v.modelo}',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            subtitle: Text(
+                              '${v.placas} · ${usuarios.porId(v.responsableId)?.nombreCompleto ?? 'Sin responsable'}',
+                            ),
+                            trailing: EstadoChip(
+                              label: v.estado.label,
+                              color: switch (v.estado) {
+                                EstadoVehiculo.activo => AppColors.success,
+                                EstadoVehiculo.taller => AppColors.warning,
+                                EstadoVehiculo.inactivo =>
+                                  AppColors.textSecondary,
+                              },
+                            ),
+                          ),
+                      ],
+                    ),
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _Header extends StatelessWidget {
-  const _Header();
-
-  @override
-  Widget build(BuildContext context) {
-    final hora = DateTime.now().hour;
-    final saludo = hora < 12
-        ? 'Buenos días'
-        : hora < 19
-            ? 'Buenas tardes'
-            : 'Buenas noches';
-
-    return Row(
-      children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(saludo,
-                  style: const TextStyle(
-                      color: AppColors.textSecondary, fontSize: 13)),
-              const SizedBox(height: 2),
-              const Text('Resumen de la flotilla',
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800)),
-            ],
-          ),
-        ),
-        Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [AppColors.primary, AppColors.primaryDark],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(14),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.primary.withValues(alpha: 0.35),
-                blurRadius: 16,
-                offset: const Offset(0, 6),
-              ),
-            ],
-          ),
-          child: const Icon(Icons.water_drop_rounded, color: Colors.white),
-        ),
-      ],
-    );
-  }
-}
-
-class _StatCard extends StatelessWidget {
-  final double width;
-  final IconData icon;
-  final List<Color> gradient;
-  final String label;
-  final String value;
-  final bool accentIcon;
-
-  const _StatCard({
-    required this.width,
-    required this.icon,
-    required this.gradient,
-    required this.label,
-    required this.value,
-    this.accentIcon = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: width,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: gradient,
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-            color: gradient.last.withValues(alpha: 0.28),
-            blurRadius: 18,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(9),
-            decoration: BoxDecoration(
-              color: accentIcon
-                  ? _accent.withValues(alpha: 0.16)
-                  : Colors.white.withValues(alpha: 0.16),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(icon,
-                color: accentIcon ? _accent : Colors.white, size: 20),
-          ),
-          const SizedBox(height: 14),
-          Text(value,
-              style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 26,
-                  fontWeight: FontWeight.w800)),
-          const SizedBox(height: 2),
-          Text(label,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.75), fontSize: 12)),
-        ],
-      ),
-    );
-  }
-}
-
-class _VehiculosPanel extends StatelessWidget {
-  final List<Vehiculo> vehiculos;
-  final UsuarioProvider usuarioProvider;
-
-  const _VehiculosPanel(
-      {required this.vehiculos, required this.usuarioProvider});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: _darkPanel,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.18),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      padding: const EdgeInsets.fromLTRB(18, 18, 18, 8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Expanded(
-                child: Text('Últimos vehículos registrados',
-                    style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700)),
-              ),
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: _accent,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text('${vehiculos.length}',
-                    style: const TextStyle(
-                        color: Colors.black,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 12)),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          if (vehiculos.isEmpty)
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 28),
-              child: Center(
-                child: Text('Aún no hay vehículos registrados',
-                    style: TextStyle(color: Colors.white54)),
-              ),
-            )
-          else
-            ...vehiculos.map((v) => _VehiculoTile(
-                  vehiculo: v,
-                  responsable: usuarioProvider.porId(v.responsableId),
-                )),
-        ],
-      ),
-    );
-  }
-}
-
-class _VehiculoTile extends StatelessWidget {
-  final Vehiculo vehiculo;
-  final Usuario? responsable;
-
-  const _VehiculoTile({required this.vehiculo, required this.responsable});
-
-  Color get _estadoColor {
-    switch (vehiculo.estado) {
-      case EstadoVehiculo.activo:
-        return _accent;
-      case EstadoVehiculo.taller:
-        return AppColors.warning;
-      case EstadoVehiculo.inactivo:
-        return AppColors.danger;
-    }
-  }
-
-  bool get _esActivo => vehiculo.estado == EstadoVehiculo.activo;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        color: _darkPanelAlt,
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 18,
-            backgroundColor: _estadoColor.withValues(alpha: 0.16),
-            child: Icon(Icons.local_shipping_outlined,
-                color: _estadoColor, size: 18),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '${vehiculo.marca} ${vehiculo.modelo} · ${vehiculo.placas}',
-                  style: const TextStyle(
-                      color: Colors.white, fontWeight: FontWeight.w600),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  'Responsable: ${responsable?.nombreCompleto ?? "Sin asignar"}',
-                  style: const TextStyle(color: Colors.white54, fontSize: 12),
-                ),
-              ],
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-            decoration: BoxDecoration(
-              color: _esActivo
-                  ? _estadoColor
-                  : _estadoColor.withValues(alpha: 0.16),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Text(
-              vehiculo.estado.label,
-              style: TextStyle(
-                color: _esActivo ? Colors.black : _estadoColor,
-                fontWeight: FontWeight.w700,
-                fontSize: 11,
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }

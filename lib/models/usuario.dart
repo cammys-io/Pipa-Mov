@@ -76,27 +76,26 @@ class Usuario {
   }
 
   factory Usuario.fromJson(Map<String, dynamic> json) => Usuario(
-        id: json['id'].toString(),
-        nombre: json['nombre'] as String,
-        rol: Rol.values.firstWhere((r) => r.name == json['rol']),
-        telefono: json['telefono'] as String,
-        numeroLicencia: json['numeroLicencia'] as String?,
-        vigencia: json['vigencia'] != null
-            ? DateTime.parse(json['vigencia'] as String)
-            : null,
-        estado:
-            EstadoPersonal.values.firstWhere((e) => e.name == json['estado']),
-        fechaRegistro: DateTime.parse(json['createdAt'] as String),
-      );
+    id: json['id'].toString(),
+    nombre: json['nombre'] as String,
+    rol: Rol.values.firstWhere((r) => r.name == json['rol']),
+    telefono: json['telefono'] as String,
+    numeroLicencia: json['numeroLicencia'] as String?,
+    vigencia: json['vigencia'] != null
+        ? DateTime.parse(json['vigencia'] as String)
+        : null,
+    estado: EstadoPersonal.values.firstWhere((e) => e.name == json['estado']),
+    fechaRegistro: DateTime.parse(json['createdAt'] as String),
+  );
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'nombre': nombre,
-        'rol': rol.name,
-        'telefono': telefono,
-        'numeroLicencia': numeroLicencia,
-        'vigencia': vigencia?.toIso8601String(),
-        'estado': estado.name,
-        'createdAt': fechaRegistro.toIso8601String(),
-      };
+    'id': id,
+    'nombre': nombre,
+    'rol': rol.name,
+    'telefono': telefono,
+    'numeroLicencia': numeroLicencia,
+    'vigencia': vigencia?.toIso8601String(),
+    'estado': estado.name,
+    'createdAt': fechaRegistro.toIso8601String(),
+  };
 }

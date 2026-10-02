@@ -12,25 +12,8 @@ abstract class UsuarioRepository {
   Future<void> eliminar(String id);
 }
 
-class MockUsuarioRepository implements UsuarioRepository {
-  final List<Usuario> _data = [
-    Usuario(
-      id: '1',
-      nombre: 'Juan Pérez López',
-      telefono: '555-101-2020',
-      rol: Rol.chofer,
-      numeroLicencia: 'LIC-00123',
-      vigencia: DateTime(2027, 5, 1),
-      estado: EstadoPersonal.activo,
-    ),
-    Usuario(
-      id: '2',
-      nombre: 'María García Torres',
-      telefono: '555-202-3030',
-      rol: Rol.admin,
-      estado: EstadoPersonal.activo,
-    ),
-  ];
+class MemoryUsuarioRepository implements UsuarioRepository {
+  final List<Usuario> _data = [];
 
   @override
   Future<List<Usuario>> obtenerTodos() async {

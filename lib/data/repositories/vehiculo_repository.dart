@@ -12,29 +12,8 @@ abstract class VehiculoRepository {
   Future<void> eliminar(String id);
 }
 
-class MockVehiculoRepository implements VehiculoRepository {
-  final List<Vehiculo> _data = [
-    Vehiculo(
-      id: '1',
-      placas: 'ABC-123-A',
-      marca: 'Freightliner',
-      modelo: 'M2 106',
-      color: 'Blanco',
-      capacidadLitros: 10000,
-      tipo: TipoUnidad.pipa,
-      estado: EstadoVehiculo.activo,
-      responsableId: '1',
-    ),
-    Vehiculo(
-      id: '2',
-      placas: 'XYZ-987-B',
-      marca: 'Isuzu',
-      modelo: 'NPR',
-      capacidadLitros: 5000,
-      tipo: TipoUnidad.carroGarrafon,
-      estado: EstadoVehiculo.taller,
-    ),
-  ];
+class MemoryVehiculoRepository implements VehiculoRepository {
+  final List<Vehiculo> _data = [];
 
   @override
   Future<List<Vehiculo>> obtenerTodos() async {

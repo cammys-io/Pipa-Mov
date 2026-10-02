@@ -5,11 +5,11 @@ import '../models/vehiculo.dart';
 
 class VehiculoProvider extends ChangeNotifier {
   // TODO: cuando exista el backend, inyecta aquí ApiVehiculoRepository
-  // en lugar de MockVehiculoRepository.
+  // en lugar de MemoryVehiculoRepository.
   final VehiculoRepository _repository;
 
   VehiculoProvider({VehiculoRepository? repository})
-      : _repository = repository ?? MockVehiculoRepository();
+    : _repository = repository ?? MemoryVehiculoRepository();
 
   List<Vehiculo> _vehiculos = [];
   bool _cargando = false;

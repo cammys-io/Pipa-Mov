@@ -5,12 +5,12 @@ import '../models/usuario.dart';
 
 class UsuarioProvider extends ChangeNotifier {
   // TODO: cuando exista el backend, inyecta aquí ApiUsuarioRepository
-  // en lugar de MockUsuarioRepository (por ejemplo vía un parámetro
+  // en lugar de MemoryUsuarioRepository (por ejemplo vía un parámetro
   // en el constructor al registrar el Provider en main.dart).
   final UsuarioRepository _repository;
 
   UsuarioProvider({UsuarioRepository? repository})
-      : _repository = repository ?? MockUsuarioRepository();
+    : _repository = repository ?? MemoryUsuarioRepository();
 
   List<Usuario> _usuarios = [];
   bool _cargando = false;
@@ -21,9 +21,11 @@ class UsuarioProvider extends ChangeNotifier {
   String? get error => _error;
 
   List<Usuario> get choferesYOperadores => _usuarios
-      .where((u) =>
-          u.estado == EstadoPersonal.activo &&
-          (u.rol == Rol.chofer || u.rol == Rol.operador))
+      .where(
+        (u) =>
+            u.estado == EstadoPersonal.activo &&
+            (u.rol == Rol.chofer || u.rol == Rol.operador),
+      )
       .toList();
 
   Usuario? porId(String? id) {

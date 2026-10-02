@@ -98,36 +98,36 @@ class Vehiculo {
       placas: placas ?? this.placas,
       capacidadLitros: capacidadLitros ?? this.capacidadLitros,
       estado: estado ?? this.estado,
-      responsableId:
-          clearResponsable ? null : (responsableId ?? this.responsableId),
+      responsableId: clearResponsable
+          ? null
+          : (responsableId ?? this.responsableId),
       fechaRegistro: fechaRegistro,
     );
   }
 
   factory Vehiculo.fromJson(Map<String, dynamic> json) => Vehiculo(
-        id: json['id'].toString(),
-        modelo: json['modelo'] as String,
-        marca: json['marca'] as String,
-        color: json['color'] as String?,
-        tipo: TipoUnidadLabel.fromDbValue(json['tipo'] as String),
-        placas: json['placas'] as String,
-        capacidadLitros: (json['capacidad'] as num).toDouble(),
-        estado:
-            EstadoVehiculo.values.firstWhere((e) => e.name == json['estatus']),
-        responsableId: json['responsable_id']?.toString(),
-        fechaRegistro: DateTime.parse(json['createdAt'] as String),
-      );
+    id: json['id'].toString(),
+    modelo: json['modelo'] as String,
+    marca: json['marca'] as String,
+    color: json['color'] as String?,
+    tipo: TipoUnidadLabel.fromDbValue(json['tipo'] as String),
+    placas: json['placas'] as String,
+    capacidadLitros: (json['capacidad'] as num).toDouble(),
+    estado: EstadoVehiculo.values.firstWhere((e) => e.name == json['estatus']),
+    responsableId: json['responsable_id']?.toString(),
+    fechaRegistro: DateTime.parse(json['createdAt'] as String),
+  );
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'modelo': modelo,
-        'marca': marca,
-        'color': color,
-        'tipo': tipo.dbValue,
-        'placas': placas,
-        'capacidad': capacidadLitros,
-        'estatus': estado.name,
-        'responsable_id': responsableId,
-        'createdAt': fechaRegistro.toIso8601String(),
-      };
+    'id': id,
+    'modelo': modelo,
+    'marca': marca,
+    'color': color,
+    'tipo': tipo.dbValue,
+    'placas': placas,
+    'capacidad': capacidadLitros,
+    'estatus': estado.name,
+    'responsable_id': responsableId,
+    'createdAt': fechaRegistro.toIso8601String(),
+  };
 }
