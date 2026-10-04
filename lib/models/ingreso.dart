@@ -105,6 +105,8 @@ class Ingreso {
   // Extra relations info
   final String? empleadoNombre;
   final String? vehiculoPlacas;
+  final String? vehiculoMarca;
+  final String? vehiculoTipo;
 
   Ingreso({
     required this.id,
@@ -121,6 +123,8 @@ class Ingreso {
     this.vehiculoId,
     this.empleadoNombre,
     this.vehiculoPlacas,
+    this.vehiculoMarca,
+    this.vehiculoTipo,
   });
 
   factory Ingreso.fromJson(Map<String, dynamic> json) {
@@ -128,11 +132,15 @@ class Ingreso {
     String? eId = json['empleadoId']?.toString();
     String? eNombre;
     String? vPlacas;
+    String? vMarca;
+    String? vTipo;
 
     if (json['vehiculo'] is Map) {
       final vMap = json['vehiculo'] as Map;
       vId ??= vMap['id']?.toString();
       vPlacas = vMap['placas']?.toString();
+      vMarca = vMap['marca']?.toString();
+      vTipo = vMap['tipo']?.toString();
     }
     
     if (json['responsable'] is Map) {
@@ -156,6 +164,8 @@ class Ingreso {
       vehiculoId: vId,
       empleadoNombre: eNombre,
       vehiculoPlacas: vPlacas,
+      vehiculoMarca: vMarca,
+      vehiculoTipo: vTipo,
     );
   }
 

@@ -5,6 +5,7 @@ abstract class GastoRepository {
   Future<Gasto> crear(Gasto gasto);
   Future<Gasto> actualizar(Gasto gasto);
   Future<void> eliminar(String id);
+  Future<Gasto> obtenerPorId(String id);
 }
 
 class MockGastoRepository implements GastoRepository {
@@ -36,5 +37,14 @@ class MockGastoRepository implements GastoRepository {
   Future<void> eliminar(String id) async {
     await Future.delayed(const Duration(milliseconds: 200));
     _data.removeWhere((g) => g.id == id);
+  }
+
+  @override
+  Future<Gasto> obtenerPorId(String id) async {
+    await Future.delayed(const Duration(milliseconds: 200));
+    return _data.firstWhere(
+      (g) => g.id == id,
+      orElse: () => throw Exception('Gasto no encontrado'),
+    );
   }
 }

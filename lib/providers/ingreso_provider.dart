@@ -29,6 +29,10 @@ class IngresoProvider extends ChangeNotifier {
     }
   }
 
+  /// Consulta el detalle completo (endpoint findOne) de un registro.
+  /// Lanza excepcion si el backend responde con error.
+  Future<Ingreso> obtenerPorId(String id) => _repository.obtenerPorId(id);
+
   Future<bool> crear(Ingreso ingreso) async {
     try {
       await _repository.crear(ingreso);

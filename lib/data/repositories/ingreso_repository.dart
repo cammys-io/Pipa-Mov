@@ -5,6 +5,7 @@ abstract class IngresoRepository {
   Future<Ingreso> crear(Ingreso ingreso);
   Future<Ingreso> actualizar(Ingreso ingreso);
   Future<void> eliminar(String id);
+  Future<Ingreso> obtenerPorId(String id);
 }
 
 class MockIngresoRepository implements IngresoRepository {
@@ -36,5 +37,14 @@ class MockIngresoRepository implements IngresoRepository {
   Future<void> eliminar(String id) async {
     await Future.delayed(const Duration(milliseconds: 200));
     _data.removeWhere((i) => i.id == id);
+  }
+
+  @override
+  Future<Ingreso> obtenerPorId(String id) async {
+    await Future.delayed(const Duration(milliseconds: 200));
+    return _data.firstWhere(
+      (i) => i.id == id,
+      orElse: () => throw Exception('Ingreso no encontrado'),
+    );
   }
 }

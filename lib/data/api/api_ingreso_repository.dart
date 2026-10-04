@@ -23,6 +23,21 @@ class ApiIngresoRepository implements IngresoRepository {
   }
 
   @override
+  Future<Ingreso> obtenerPorId(String id) async {
+    final response = await _client.get(
+      Uri.parse('$_baseUrl/$id'),
+      headers: ApiConfig.authHeaders,
+    );
+
+    if (response.statusCode == 200) {
+      return Ingreso.fromJson(json.decode(response.body));
+    } else {
+      _throwError(response);
+    }
+    throw Exception('Unreachable');
+  }
+
+  @override
   Future<Ingreso> crear(Ingreso ingreso) async {
     final response = await _client.post(
       Uri.parse(_baseUrl),

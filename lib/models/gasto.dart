@@ -46,6 +46,8 @@ class Gasto {
   // Additional data mapped from nested relation
   final String? empleadoNombre;
   final String? vehiculoPlacas;
+  final String? vehiculoMarca;
+  final String? vehiculoTipo;
 
   Gasto({
     required this.id,
@@ -58,6 +60,8 @@ class Gasto {
     this.empleadoId,
     this.empleadoNombre,
     this.vehiculoPlacas,
+    this.vehiculoMarca,
+    this.vehiculoTipo,
   });
 
   factory Gasto.fromJson(Map<String, dynamic> json) {
@@ -65,11 +69,15 @@ class Gasto {
     String? eId = json['empleadoId']?.toString();
     String? eNombre;
     String? vPlacas;
+    String? vMarca;
+    String? vTipo;
 
     if (json['vehiculo'] is Map) {
       final vMap = json['vehiculo'] as Map;
       vId ??= vMap['id']?.toString();
       vPlacas = vMap['placas']?.toString();
+      vMarca = vMap['marca']?.toString();
+      vTipo = vMap['tipo']?.toString();
     }
     
     if (json['empleado'] is Map) {
@@ -89,6 +97,8 @@ class Gasto {
       empleadoId: eId,
       empleadoNombre: eNombre,
       vehiculoPlacas: vPlacas,
+      vehiculoMarca: vMarca,
+      vehiculoTipo: vTipo,
     );
   }
 

@@ -126,17 +126,19 @@ class Vehiculo {
     }
 
     return Vehiculo(
-      id: json['id'].toString(),
-      modelo: json['modelo'] as String,
-      marca: json['marca'] as String,
-      color: json['color'] as String?,
-      tipo: TipoUnidadLabel.fromDbValue(json['tipo'] as String),
-      placas: json['placas'] as String,
+      id: json['id']?.toString() ?? '',
+      modelo: json['modelo']?.toString() ?? '',
+      marca: json['marca']?.toString() ?? '',
+      color: json['color']?.toString(),
+      tipo: TipoUnidadLabel.fromDbValue(json['tipo']?.toString() ?? ''),
+      placas: json['placas']?.toString() ?? '',
       // Se usa toString() antes de parsear porque PostgreSQL decimal
       // puede serializar como string en vez de numero.
-      capacidadLitros: double.parse(json['capacidad'].toString()),
-      estado:
-          EstadoVehiculo.values.firstWhere((e) => e.name == json['estatus']),
+      capacidadLitros: double.tryParse(json['capacidad']?.toString() ?? '0') ?? 0.0,
+      estado: EstadoVehiculo.values.firstWhere(
+        (e) => e.name == json['estatus'],
+        orElse: () => EstadoVehiculo.activo,
+      ),
       responsableId: resId,
       // createdAt no esta presente en la respuesta de findAll (no se incluye
       // en el select del backend), asi que se usa la fecha actual como fallback.

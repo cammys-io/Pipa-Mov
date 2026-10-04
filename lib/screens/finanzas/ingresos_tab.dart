@@ -3,7 +3,9 @@ import 'package:provider/provider.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../../models/ingreso.dart';
+import '../../../models/vehiculo.dart';
 import '../../../providers/ingreso_provider.dart';
+import 'finanza_detalle_dialog.dart';
 import 'ingreso_form_dialog.dart';
 
 const _accent = Color(0xFFCBFF3D);
@@ -33,6 +35,46 @@ class _IngresosTabState extends State<IngresosTab> {
     await showDialog(
       context: context,
       builder: (_) => IngresoFormDialog(ingreso: ingreso),
+    );
+  }
+
+  /// Abre el detalle del ingreso consultando el endpoint findOne.
+  void _mostrarDetalles(Ingreso ingreso) {
+    final provider = context.read<IngresoProvider>();
+    showDialog(
+      context: context,
+      builder: (_) => FinanzaDetalleDialog(
+        titulo: 'Detalle del ingreso',
+        detalle: provider.obtenerPorId(ingreso.id).then(_armarDetalle),
+      ),
+    );
+  }
+
+  DetalleFinanza _armarDetalle(Ingreso i) {
+    final f = i.fecha;
+    return DetalleFinanza(
+      generales: [
+        DetalleFila('Fecha', '${f.day}/${f.month}/${f.year}', faltante: 'Sin fecha'),
+        DetalleFila('Servicio', i.tipoServicio.label, faltante: 'Sin servicio'),
+        DetalleFila('Monto', '\$${i.montoTotal.toStringAsFixed(2)}', faltante: 'Sin monto'),
+        DetalleFila('Horas', i.cantidadHoras?.toString(), faltante: 'Sin horas registradas'),
+        DetalleFila('Viajes', i.cantidadViajes?.toString(), faltante: 'Sin viajes registrados'),
+        DetalleFila('Garrafones', i.cantidadGarrafones?.toString(), faltante: 'Sin garrafones registrados'),
+        DetalleFila('Capacidad de pipa', i.capacidadPipa?.label, faltante: 'Sin capacidad registrada'),
+        DetalleFila('Material', i.tipoMaterial?.label, faltante: 'Sin material registrado'),
+      ],
+      empleado: i.empleadoId == null && i.empleadoNombre == null
+          ? null
+          : [DetalleFila('Nombre', i.empleadoNombre, faltante: 'Sin nombre')],
+      vehiculo: i.vehiculoId == null && i.vehiculoPlacas == null
+          ? null
+          : [
+              DetalleFila('Marca', i.vehiculoMarca, faltante: 'Sin marca'),
+              DetalleFila('Tipo', i.vehiculoTipo == null ? null : TipoUnidadLabel.fromDbValue(i.vehiculoTipo!).label, faltante: 'Sin tipo'),
+              DetalleFila('Placas', i.vehiculoPlacas, faltante: 'Sin placas'),
+            ],
+      comprobanteTitulo: 'Comprobante',
+      comprobanteUrl: i.notaUrl,
     );
   }
 
@@ -133,7 +175,8 @@ class _IngresosTabState extends State<IngresosTab> {
                                     DataColumn(label: Text('Servicio')),
                                     DataColumn(label: Text('Detalles')),
                                     DataColumn(label: Text('Monto')),
-                                    DataColumn(label: Text('Empleado/Vehículo')),
+                                    DataColumn(label: Text('Empleado')),
+                                    DataColumn(label: Text('Vehículo')),
                                     DataColumn(label: Text('Acciones')),
                                   ],
                                   rows: ingresos.map((i) {
@@ -152,18 +195,16 @@ class _IngresosTabState extends State<IngresosTab> {
                                         ],
                                       )),
                                       DataCell(Text('\$${i.montoTotal.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green))),
-                                      DataCell(Column(
-                                        mainAxisAlignment: MainAxisAlignment.center,
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          if (i.empleadoNombre != null) Text('👤 ${i.empleadoNombre}'),
-                                          if (i.vehiculoPlacas != null) Text('🚚 ${i.vehiculoPlacas}'),
-                                          if (i.empleadoNombre == null && i.vehiculoPlacas == null) const Text('—'),
-                                        ],
-                                      )),
+                                      DataCell(Text(i.empleadoNombre ?? '—')),
+                                      DataCell(Text(i.vehiculoPlacas ?? '—')),
                                       DataCell(Row(
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
+                                          IconButton(
+                                            tooltip: 'Detalles',
+                                            icon: const Icon(Icons.info_outline, color: AppColors.textPrimary, size: 20),
+                                            onPressed: () => _mostrarDetalles(i),
+                                          ),
                                           IconButton(
                                             tooltip: 'Editar',
                                             icon: const Icon(Icons.edit_outlined, color: AppColors.textSecondary, size: 20),

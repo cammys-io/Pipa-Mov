@@ -29,6 +29,10 @@ class GastoProvider extends ChangeNotifier {
     }
   }
 
+  /// Consulta el detalle completo (endpoint findOne) de un registro.
+  /// Lanza excepcion si el backend responde con error.
+  Future<Gasto> obtenerPorId(String id) => _repository.obtenerPorId(id);
+
   Future<bool> crear(Gasto gasto) async {
     try {
       await _repository.crear(gasto);

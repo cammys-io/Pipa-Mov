@@ -69,6 +69,10 @@ class _PersonalTabState extends State<PersonalTab> {
   }
 
   Future<void> _mostrarDetalles(Usuario usuario) async {
+    // showDialog abre el diálogo en el Navigator raíz; el contexto de esta
+    // pestaña pertenece al Navigator anidado del shell, así que se guarda
+    // el raíz para cerrar el loading en el navigator correcto.
+    final rootNavigator = Navigator.of(context, rootNavigator: true);
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -80,8 +84,8 @@ class _PersonalTabState extends State<PersonalTab> {
     );
 
     final details = await context.read<UsuarioProvider>().obtenerDetallesVehiculos(usuario.id);
+    rootNavigator.pop(); // Cerrar loading
     if (!mounted) return;
-    Navigator.pop(context); // Cerrar loading
 
     if (details == null) {
       ScaffoldMessenger.of(context).showSnackBar(

@@ -3,7 +3,9 @@ import 'package:provider/provider.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../../models/gasto.dart';
+import '../../../models/vehiculo.dart';
 import '../../../providers/gasto_provider.dart';
+import 'finanza_detalle_dialog.dart';
 import 'gasto_form_dialog.dart';
 
 const _accent = Color(0xFFCBFF3D);
@@ -33,6 +35,42 @@ class _GastosTabState extends State<GastosTab> {
     await showDialog(
       context: context,
       builder: (_) => GastoFormDialog(gasto: gasto),
+    );
+  }
+
+  /// Abre el detalle del gasto consultando el endpoint findOne.
+  void _mostrarDetalles(Gasto gasto) {
+    final provider = context.read<GastoProvider>();
+    showDialog(
+      context: context,
+      builder: (_) => FinanzaDetalleDialog(
+        titulo: 'Detalle del gasto',
+        detalle: provider.obtenerPorId(gasto.id).then(_armarDetalle),
+      ),
+    );
+  }
+
+  DetalleFinanza _armarDetalle(Gasto g) {
+    final f = g.fecha;
+    return DetalleFinanza(
+      generales: [
+        DetalleFila('Fecha', '${f.day}/${f.month}/${f.year}', faltante: 'Sin fecha'),
+        DetalleFila('Categoría', g.categoria.label, faltante: 'Sin categoría'),
+        DetalleFila('Monto', '\$${g.monto.toStringAsFixed(2)}', faltante: 'Sin monto'),
+        DetalleFila('Descripción', g.descripcion, faltante: 'Sin descripción'),
+      ],
+      empleado: g.empleadoId == null && g.empleadoNombre == null
+          ? null
+          : [DetalleFila('Nombre', g.empleadoNombre, faltante: 'Sin nombre')],
+      vehiculo: g.vehiculoId == null && g.vehiculoPlacas == null
+          ? null
+          : [
+              DetalleFila('Marca', g.vehiculoMarca, faltante: 'Sin marca'),
+              DetalleFila('Tipo', g.vehiculoTipo == null ? null : TipoUnidadLabel.fromDbValue(g.vehiculoTipo!).label, faltante: 'Sin tipo'),
+              DetalleFila('Placas', g.vehiculoPlacas, faltante: 'Sin placas'),
+            ],
+      comprobanteTitulo: 'Comprobante',
+      comprobanteUrl: g.comprobanteUrl,
     );
   }
 
@@ -133,7 +171,8 @@ class _GastosTabState extends State<GastosTab> {
                                     DataColumn(label: Text('Categoría')),
                                     DataColumn(label: Text('Descripción')),
                                     DataColumn(label: Text('Monto')),
-                                    DataColumn(label: Text('Empleado/Vehículo')),
+                                    DataColumn(label: Text('Empleado')),
+                                    DataColumn(label: Text('Vehículo')),
                                     DataColumn(label: Text('Acciones')),
                                   ],
                                   rows: gastos.map((g) {
@@ -142,18 +181,16 @@ class _GastosTabState extends State<GastosTab> {
                                       DataCell(Text(g.categoria.label)),
                                       DataCell(Text(g.descripcion)),
                                       DataCell(Text('\$${g.monto.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold))),
-                                      DataCell(Column(
-                                        mainAxisAlignment: MainAxisAlignment.center,
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          if (g.empleadoNombre != null) Text('👤 ${g.empleadoNombre}'),
-                                          if (g.vehiculoPlacas != null) Text('🚚 ${g.vehiculoPlacas}'),
-                                          if (g.empleadoNombre == null && g.vehiculoPlacas == null) const Text('—'),
-                                        ],
-                                      )),
+                                      DataCell(Text(g.empleadoNombre ?? '—')),
+                                      DataCell(Text(g.vehiculoPlacas ?? '—')),
                                       DataCell(Row(
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
+                                          IconButton(
+                                            tooltip: 'Detalles',
+                                            icon: const Icon(Icons.info_outline, color: AppColors.textPrimary, size: 20),
+                                            onPressed: () => _mostrarDetalles(g),
+                                          ),
                                           IconButton(
                                             tooltip: 'Editar',
                                             icon: const Icon(Icons.edit_outlined, color: AppColors.textSecondary, size: 20),
