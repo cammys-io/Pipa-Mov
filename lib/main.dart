@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 
 import 'core/router/app_router.dart';
@@ -12,6 +13,7 @@ import 'providers/usuario_provider.dart';
 import 'providers/vehiculo_provider.dart';
 import 'providers/gasto_provider.dart';
 import 'providers/ingreso_provider.dart';
+import 'providers/estadisticas_provider.dart';
 
 void main() {
   runApp(const PipaMovApp());
@@ -41,6 +43,7 @@ class PipaMovApp extends StatelessWidget {
         ChangeNotifierProvider(
           create: (_) => IngresoProvider(repository: ApiIngresoRepository()),
         ),
+        ChangeNotifierProvider(create: (_) => EstadisticasProvider()),
       ],
       // Se usa un Builder para poder acceder al AuthProvider
       // e inyectarlo en la configuración del router.
@@ -53,6 +56,13 @@ class PipaMovApp extends StatelessWidget {
             title: 'Pipa Mov',
             debugShowCheckedModeBanner: false,
             theme: buildAppTheme(),
+            locale: const Locale('es'),
+            supportedLocales: const [Locale('es'), Locale('en')],
+            localizationsDelegates: const [
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
             routerConfig: router,
           );
         },

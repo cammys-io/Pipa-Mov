@@ -25,6 +25,10 @@ class ApiConfig {
   static const String expensesPath = '/api/expenses';
   static const String incomesPath = '/api/incomes';
 
+  /// Ruta base para el modulo de estadisticas del dashboard.
+  /// Corresponde al controlador @Controller('api/statics') del backend.
+  static const String staticsPath = '/api/statics';
+
   /// Ruta base para el modulo de autenticacion.
   /// Corresponde al controlador @Controller('api/auth') del backend.
   static const String authPath = '/api/auth';
