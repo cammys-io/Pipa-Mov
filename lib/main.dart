@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
+import 'core/widgets/sticky_note_layer.dart';
 import 'data/api/api_usuario_repository.dart';
 import 'data/api/api_vehiculo_repository.dart';
 import 'data/api/api_gasto_repository.dart';
@@ -14,6 +15,7 @@ import 'providers/vehiculo_provider.dart';
 import 'providers/gasto_provider.dart';
 import 'providers/ingreso_provider.dart';
 import 'providers/estadisticas_provider.dart';
+import 'providers/nota_provider.dart';
 
 void main() {
   runApp(const PipaMovApp());
@@ -44,6 +46,7 @@ class PipaMovApp extends StatelessWidget {
           create: (_) => IngresoProvider(repository: ApiIngresoRepository()),
         ),
         ChangeNotifierProvider(create: (_) => EstadisticasProvider()),
+        ChangeNotifierProvider(create: (_) => NotaProvider()),
       ],
       // Se usa un Builder para poder acceder al AuthProvider
       // e inyectarlo en la configuración del router.
@@ -64,6 +67,9 @@ class PipaMovApp extends StatelessWidget {
               GlobalCupertinoLocalizations.delegate,
             ],
             routerConfig: router,
+            // El builder envuelve al Navigator: lo que se pinte aquí queda
+            // por encima de TODAS las rutas y persiste al navegar.
+            builder: (context, child) => StickyNoteLayer(child: child),
           );
         },
       ),

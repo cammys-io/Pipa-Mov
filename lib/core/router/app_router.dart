@@ -6,6 +6,7 @@ import '../../screens/auth/login_screen.dart';
 import '../../screens/catalogos/catalogos_screen.dart';
 import '../../screens/dashboard/dashboard_screen.dart';
 import '../../screens/finanzas/finanzas_screen.dart';
+import '../../screens/notas/notas_screen.dart';
 import '../widgets/app_shell.dart';
 
 /// Crea y configura la instancia de GoRouter.
@@ -83,6 +84,16 @@ GoRouter buildRouter(AuthProvider authProvider) {
               GoRoute(
                 path: '/finanzas',
                 builder: (context, state) => const FinanzasScreen(),
+              ),
+            ],
+          ),
+
+          // Branch 3: Notas y recordatorios
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/notas',
+                builder: (context, state) => const NotasScreen(),
               ),
             ],
           ),

@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../providers/auth_provider.dart';
+import '../../providers/nota_provider.dart';
 import '../theme/app_theme.dart';
 
 const _accent = Color(0xFFCBFF3D);
@@ -12,6 +13,7 @@ const _destinationsList = [
   _NavItem('Dashboard', Icons.dashboard_rounded),
   _NavItem('Catálogos y Admin', Icons.inventory_2_rounded),
   _NavItem('Finanzas', Icons.attach_money_rounded),
+  _NavItem('Notas', Icons.sticky_note_2_rounded),
 ];
 
 /// Shell principal: sidebar de navegación + contenido.
@@ -62,6 +64,13 @@ class AppShell extends StatelessWidget {
                                   fontWeight: FontWeight.w700,
                                   fontSize: 15)),
                           const Spacer(),
+                          IconButton(
+                            icon: const Icon(Icons.note_add_rounded,
+                                color: _accent, size: 20),
+                            tooltip: 'Crear nota',
+                            onPressed: () =>
+                                context.read<NotaProvider>().abrirSticky(),
+                          ),
                           Consumer<AuthProvider>(
                             builder: (context, auth, _) => IconButton(
                               icon: const Icon(Icons.logout_rounded,
@@ -183,6 +192,19 @@ class _Sidebar extends StatelessWidget {
             ),
             const SizedBox(height: 6),
           ],
+          const SizedBox(height: 10),
+          OutlinedButton.icon(
+            onPressed: () => context.read<NotaProvider>().abrirSticky(),
+            icon: const Icon(Icons.note_add_rounded, size: 18),
+            label: const Text('Nueva nota'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: _accent,
+              side: BorderSide(color: _accent.withValues(alpha: 0.5)),
+              minimumSize: const Size.fromHeight(42),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
+            ),
+          ),
           const Spacer(),
           // Sección de logout
           Consumer<AuthProvider>(
