@@ -112,10 +112,10 @@ class Vehiculo {
     color: json['color'] as String?,
     tipo: TipoUnidadLabel.fromDbValue(json['tipo'] as String),
     placas: json['placas'] as String,
-    capacidadLitros: (json['capacidad'] as num).toDouble(),
+    capacidadLitros: double.tryParse(json['capacidad']?.toString() ?? '0') ?? 0.0,
     estado: EstadoVehiculo.values.firstWhere((e) => e.name == json['estatus']),
-    responsableId: json['responsable_id']?.toString(),
-    fechaRegistro: DateTime.parse(json['createdAt'] as String),
+    responsableId: (json['responsableId'] ?? json['responsable_id'] ?? json['responsable']?['id'])?.toString(),
+    fechaRegistro: json['createdAt'] != null ? DateTime.parse(json['createdAt'] as String) : DateTime.now(),
   );
 
   Map<String, dynamic> toJson() => {

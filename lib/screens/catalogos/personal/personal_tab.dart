@@ -21,7 +21,7 @@ class PersonalTab extends StatefulWidget {
 }
 
 class _PersonalTabState extends State<PersonalTab> {
-  String _busqueda = '';
+
 
   @override
   void initState() {
@@ -103,11 +103,7 @@ class _PersonalTabState extends State<PersonalTab> {
   Widget build(BuildContext context) {
     final provider = context.watch<UsuarioProvider>();
 
-    final usuarios = provider.usuarios.where((u) {
-      if (_busqueda.trim().isEmpty) return true;
-      final q = _busqueda.trim().toLowerCase();
-      return u.nombreCompleto.toLowerCase().contains(q);
-    }).toList();
+    final usuarios = provider.usuarios;
 
     return Padding(
       padding: const EdgeInsets.all(20),
@@ -117,7 +113,7 @@ class _PersonalTabState extends State<PersonalTab> {
           CatalogToolbar(
             hint: 'Buscar por nombre…',
             label: 'Nuevo empleado',
-            onChanged: (v) => setState(() => _busqueda = v),
+            onChanged: (v) {}, // Búsqueda deshabilitada por backend
             onAdd: () => _abrirFormulario(),
           ),
           if (provider.error != null)

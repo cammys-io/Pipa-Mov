@@ -2,10 +2,10 @@ import 'dart:typed_data';
 import 'vehiculo.dart';
 
 enum ServicioOperacion {
-  pipa('Pipa de agua', 'agua', TipoUnidad.pipa),
+  pipa('Pipa de agua', 'pipa de agua', TipoUnidad.pipa),
   retro('Retroexcavadora', 'maquinaria', TipoUnidad.retro),
   volteo('Volteo', 'volteo', TipoUnidad.volteo),
-  garrafones('Garrafones / botellones', 'agua', TipoUnidad.carroGarrafon);
+  garrafones('Garrafones / botellones', 'garrafon de agua', TipoUnidad.carroGarrafon);
 
   final String label;
   final String dbValue;
@@ -15,9 +15,11 @@ enum ServicioOperacion {
 
 enum CategoriaGasto {
   combustible('Combustible', 'combustible'),
-  mantenimiento('Mantenimiento', 'mtto'),
   insumos('Insumos', 'insumos'),
-  sueldos('Sueldos', 'sueldos');
+  sueldos('Sueldos', 'sueldos'),
+  refacciones('Refacciones', 'refacciones'),
+  taller('Taller', 'taller'),
+  otro('Otro', 'otro');
 
   final String label;
   final String dbValue;
@@ -106,10 +108,8 @@ class Ingreso extends Movimiento {
     final servicio = switch (json['tipo_servicio']) {
       'maquinaria' => ServicioOperacion.retro,
       'volteo' => ServicioOperacion.volteo,
-      'agua' =>
-        (json['cantidad_garrafones'] as num? ?? 0) > 0
-            ? ServicioOperacion.garrafones
-            : ServicioOperacion.pipa,
+      'pipa de agua' => ServicioOperacion.pipa,
+      'garrafon de agua' => ServicioOperacion.garrafones,
       _ => throw FormatException(
         'Tipo de servicio desconocido: ${json['tipo_servicio']}',
       ),
@@ -117,13 +117,13 @@ class Ingreso extends Movimiento {
     return Ingreso(
       id: json['id'].toString(),
       fecha: DateTime.parse(json['fecha']).toLocal(),
-      empleadoId: json['empleado_id'].toString(),
-      vehiculoId: json['vehiculo_id']?.toString(),
-      monto: (json['monto_total'] as num).toDouble(),
+      empleadoId: (json['empleadoId'] ?? json['empleado_id'] ?? json['responsable']?['id'] ?? '').toString(),
+      vehiculoId: (json['vehiculoId'] ?? json['vehiculo_id'] ?? json['vehiculo']?['id'])?.toString(),
+      monto: double.tryParse(json['monto_total']?.toString() ?? '0') ?? 0.0,
       servicio: servicio,
-      cantidadHoras: (json['cantidad_horas'] as num?)?.toDouble(),
-      cantidadViajes: (json['cantidad_viajes'] as num?)?.toInt(),
-      cantidadGarrafones: (json['cantidad_garrafones'] as num?)?.toInt(),
+      cantidadHoras: json['cantidad_horas'] != null ? double.tryParse(json['cantidad_horas'].toString()) : null,
+      cantidadViajes: json['cantidad_viajes'] != null ? int.tryParse(json['cantidad_viajes'].toString()) : null,
+      cantidadGarrafones: json['cantidad_garrafones'] != null ? int.tryParse(json['cantidad_garrafones'].toString()) : null,
       capacidadPipa: json['capacidad_pipa'] as String?,
       tipoMaterial: json['tipo_material'] as String?,
       archivoUrl: json['nota_url'] as String?,
@@ -163,12 +163,13 @@ class Gasto extends Movimiento {
   factory Gasto.fromJson(Map<String, dynamic> json) => Gasto(
     id: json['id'].toString(),
     fecha: DateTime.parse(json['fecha']).toLocal(),
-    empleadoId: json['empleado_id'].toString(),
-    vehiculoId: json['vehiculo_id']?.toString(),
-    monto: (json['monto'] as num).toDouble(),
+    empleadoId: (json['empleadoId'] ?? json['empleado_id'] ?? json['empleado']?['id'] ?? '').toString(),
+    vehiculoId: (json['vehiculoId'] ?? json['vehiculo_id'] ?? json['vehiculo']?['id'])?.toString(),
+    monto: double.tryParse(json['monto']?.toString() ?? '0') ?? 0.0,
     descripcion: json['descripcion'] as String,
     categoria: CategoriaGasto.values.firstWhere(
       (c) => c.dbValue == json['categoria'],
+      orElse: () => CategoriaGasto.otro,
     ),
     archivoUrl: json['comprobante_url'] as String?,
   );

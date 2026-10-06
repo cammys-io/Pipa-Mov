@@ -34,7 +34,7 @@ class _MovimientoFormDialogState extends State<MovimientoFormDialog> {
   CategoriaGasto _categoria = CategoriaGasto.combustible;
   String? _empleadoId;
   String? _vehiculoId;
-  String _capacidad = '5mil';
+  String _capacidad = '5000 ';
   bool _manual = false;
   bool _porHoras = false;
   bool _guardando = false;
@@ -373,21 +373,24 @@ class _MovimientoFormDialogState extends State<MovimientoFormDialog> {
               labelText: 'Capacidad de la pipa',
             ),
             items: const [
-              DropdownMenuItem(value: '5mil', child: Text('5,000 litros')),
-              DropdownMenuItem(value: '10mil', child: Text('10,000 litros')),
+              DropdownMenuItem(value: '1500', child: Text('1,500 litros')),
+              DropdownMenuItem(value: '5000 ', child: Text('5,000 litros')),
+              DropdownMenuItem(value: '10000', child: Text('10,000 litros')),
             ],
             onChanged: (v) => setState(() => _capacidad = v!),
           ),
         if (_servicio == ServicioOperacion.volteo)
-          TextFormField(
-            controller: _material,
-            maxLength: 80,
-            decoration: const InputDecoration(
-              labelText: 'Material',
-              hintText: 'Arena, grava, base…',
-            ),
-            validator: (v) =>
-                v == null || v.trim().isEmpty ? 'Indica el material' : null,
+          DropdownButtonFormField<String>(
+            initialValue: _material.text.isEmpty ? 'arena' : _material.text,
+            decoration: const InputDecoration(labelText: 'Material'),
+            items: const [
+              DropdownMenuItem(value: 'arena', child: Text('Arena')),
+              DropdownMenuItem(value: 'grava', child: Text('Grava')),
+              DropdownMenuItem(value: 'tierra', child: Text('Tierra')),
+              DropdownMenuItem(value: 'escombro', child: Text('Escombro')),
+              DropdownMenuItem(value: 'otro', child: Text('Otro')),
+            ],
+            onChanged: (v) => setState(() => _material.text = v!),
           ),
         SwitchListTile.adaptive(
           contentPadding: EdgeInsets.zero,

@@ -38,6 +38,8 @@ class Usuario {
   final DateTime? vigencia;
   final EstadoPersonal estado;
   final DateTime fechaRegistro;
+  final String? email;
+  final String? password;
 
   Usuario({
     required this.id,
@@ -48,6 +50,8 @@ class Usuario {
     this.vigencia,
     this.estado = EstadoPersonal.activo,
     DateTime? fechaRegistro,
+    this.email,
+    this.password,
   }) : fechaRegistro = fechaRegistro ?? DateTime.now();
 
   /// Se conserva por compatibilidad con el resto de la app
@@ -62,6 +66,8 @@ class Usuario {
     String? numeroLicencia,
     DateTime? vigencia,
     EstadoPersonal? estado,
+    String? email,
+    String? password,
   }) {
     return Usuario(
       id: id,
@@ -71,6 +77,8 @@ class Usuario {
       numeroLicencia: numeroLicencia ?? this.numeroLicencia,
       vigencia: vigencia ?? this.vigencia,
       estado: estado ?? this.estado,
+      email: email ?? this.email,
+      password: password ?? this.password,
       fechaRegistro: fechaRegistro,
     );
   }
@@ -86,6 +94,7 @@ class Usuario {
         : null,
     estado: EstadoPersonal.values.firstWhere((e) => e.name == json['estado']),
     fechaRegistro: DateTime.parse(json['createdAt'] as String),
+    email: json['email'] as String?,
   );
 
   Map<String, dynamic> toJson() => {
@@ -97,5 +106,7 @@ class Usuario {
     'vigencia': vigencia?.toIso8601String(),
     'estado': estado.name,
     'createdAt': fechaRegistro.toIso8601String(),
+    if (email != null) 'email': email,
+    if (password != null) 'password': password,
   };
 }

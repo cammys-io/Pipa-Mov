@@ -66,6 +66,34 @@ class MovimientosTable extends StatelessWidget {
     }
   }
 
+  void _detalles(BuildContext context, Movimiento m) {
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('Detalle de ${m.esGasto ? 'Gasto' : 'Ingreso'}'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Concepto: ${m.concepto}', style: const TextStyle(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            const Text('Detalles:'),
+            Text(m.detalle, style: const TextStyle(color: AppColors.textSecondary)),
+            const SizedBox(height: 12),
+            Text('Monto: ${dinero(m.monto)}', style: const TextStyle(fontWeight: FontWeight.bold)),
+            Text('Fecha: ${fechaCorta(m.fecha)}'),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cerrar'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (movimientos.isEmpty) {
@@ -183,6 +211,15 @@ class MovimientosTable extends StatelessWidget {
                             DataCell(
                               Row(
                                 children: [
+                                  IconButton(
+                                    tooltip: 'Más información',
+                                    onPressed: () => _detalles(context, m),
+                                    icon: const Icon(
+                                      Icons.info_outline,
+                                      size: 20,
+                                      color: AppColors.primary,
+                                    ),
+                                  ),
                                   IconButton(
                                     tooltip: 'Editar registro',
                                     onPressed: () => onEdit!(m),

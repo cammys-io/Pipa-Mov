@@ -18,7 +18,7 @@ class MovimientosScreen extends StatefulWidget {
 }
 
 class _MovimientosScreenState extends State<MovimientosScreen> {
-  String _busqueda = '';
+
   @override
   void initState() {
     super.initState();
@@ -71,10 +71,9 @@ class _MovimientosScreenState extends State<MovimientosScreen> {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<MovimientoProvider>();
-    final movimientos = FiltroMovimientos(
-      esGasto: widget.esGasto,
-      busqueda: _busqueda,
-    ).aplicar(provider.movimientos);
+    final movimientos = provider.movimientos
+        .where((m) => m.esGasto == widget.esGasto)
+        .toList();
     final totales = TotalesMovimientos.de(movimientos);
     return Scaffold(
       appBar: AppBar(
@@ -113,7 +112,10 @@ class _MovimientosScreenState extends State<MovimientosScreen> {
           CatalogToolbar(
             hint: 'Buscar concepto o detalle…',
             label: widget.esGasto ? 'Registrar gasto' : 'Registrar operación',
-            onChanged: (v) => setState(() => _busqueda = v),
+            onChanged:
+                (
+                  v,
+                ) {}, // Búsqueda deshabilitada (no soportada por el backend en esta vista)
             onAdd: () => _formulario(),
           ),
           const SizedBox(height: 20),

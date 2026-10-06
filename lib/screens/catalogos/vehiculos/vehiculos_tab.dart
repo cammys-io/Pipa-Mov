@@ -21,7 +21,7 @@ class VehiculosTab extends StatefulWidget {
 }
 
 class _VehiculosTabState extends State<VehiculosTab> {
-  String _busqueda = '';
+
 
   @override
   void initState() {
@@ -112,13 +112,7 @@ class _VehiculosTabState extends State<VehiculosTab> {
     final provider = context.watch<VehiculoProvider>();
     final usuarioProvider = context.watch<UsuarioProvider>();
 
-    final vehiculos = provider.vehiculos.where((v) {
-      if (_busqueda.trim().isEmpty) return true;
-      final q = _busqueda.trim().toLowerCase();
-      return v.placas.toLowerCase().contains(q) ||
-          v.marca.toLowerCase().contains(q) ||
-          v.modelo.toLowerCase().contains(q);
-    }).toList();
+    final vehiculos = provider.vehiculos;
 
     return Padding(
       padding: const EdgeInsets.all(20),
@@ -128,7 +122,7 @@ class _VehiculosTabState extends State<VehiculosTab> {
           CatalogToolbar(
             hint: 'Buscar placas, marca o modelo…',
             label: 'Nuevo vehículo',
-            onChanged: (v) => setState(() => _busqueda = v),
+            onChanged: (v) {}, // Búsqueda deshabilitada por backend
             onAdd: () => _abrirFormulario(),
           ),
           if (provider.error != null)

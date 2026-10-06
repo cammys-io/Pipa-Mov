@@ -25,6 +25,8 @@ class _PersonalFormDialogState extends State<PersonalFormDialog> {
   late final TextEditingController _nombreCtrl;
   late final TextEditingController _telefonoCtrl;
   late final TextEditingController _licenciaCtrl;
+  late final TextEditingController _emailCtrl;
+  late final TextEditingController _passwordCtrl;
 
   late Rol _rol;
   late EstadoPersonal _estado;
@@ -32,6 +34,7 @@ class _PersonalFormDialogState extends State<PersonalFormDialog> {
   bool _guardando = false;
 
   bool get _requiereLicencia => _rol == Rol.chofer || _rol == Rol.operador;
+  bool get _requiereCuenta => _rol == Rol.admin;
 
   @override
   void initState() {
@@ -40,6 +43,8 @@ class _PersonalFormDialogState extends State<PersonalFormDialog> {
     _nombreCtrl = TextEditingController(text: u?.nombre ?? '');
     _telefonoCtrl = TextEditingController(text: u?.telefono ?? '');
     _licenciaCtrl = TextEditingController(text: u?.numeroLicencia ?? '');
+    _emailCtrl = TextEditingController(text: u?.email ?? '');
+    _passwordCtrl = TextEditingController(text: '');
     _rol = u?.rol ?? Rol.chofer;
     _estado = u?.estado ?? EstadoPersonal.activo;
     _vigencia = u?.vigencia;
@@ -50,6 +55,8 @@ class _PersonalFormDialogState extends State<PersonalFormDialog> {
     _nombreCtrl.dispose();
     _telefonoCtrl.dispose();
     _licenciaCtrl.dispose();
+    _emailCtrl.dispose();
+    _passwordCtrl.dispose();
     super.dispose();
   }
 
@@ -79,6 +86,12 @@ class _PersonalFormDialogState extends State<PersonalFormDialog> {
       vigencia: _requiereLicencia ? _vigencia : null,
       estado: _estado,
       fechaRegistro: widget.usuario?.fechaRegistro,
+      email: _requiereCuenta && _emailCtrl.text.trim().isNotEmpty
+          ? _emailCtrl.text.trim()
+          : null,
+      password: _requiereCuenta && _passwordCtrl.text.trim().isNotEmpty
+          ? _passwordCtrl.text.trim()
+          : null,
     );
 
     final ok = widget.esEdicion
@@ -90,7 +103,6 @@ class _PersonalFormDialogState extends State<PersonalFormDialog> {
 
     if (ok) {
       Navigator.pop(context, true);
-
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -176,6 +188,36 @@ class _PersonalFormDialogState extends State<PersonalFormDialog> {
                         style: const TextStyle(color: AppColors.textPrimary),
                       ),
                     ),
+                  ),
+                ],
+                if (_requiereCuenta) ...[
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: _emailCtrl,
+                    decoration: const InputDecoration(labelText: 'Correo electrónico'),
+                    keyboardType: TextInputType.emailAddress,
+                    validator: (v) => (_requiereCuenta && (v == null || v.trim().isEmpty))
+                        ? 'Requerido para administradores'
+                        : null,
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: _passwordCtrl,
+                    decoration: InputDecoration(
+                      labelText: widget.esEdicion ? 'Contraseña (opcional)' : 'Contraseña',
+                      helperText: widget.esEdicion ? 'Dejar en blanco para no cambiarla' : null,
+                    ),
+                    obscureText: true,
+                    validator: (v) {
+                      if (!_requiereCuenta) return null;
+                      if (!widget.esEdicion && (v == null || v.trim().isEmpty)) {
+                        return 'Requerido para administradores';
+                      }
+                      if (v != null && v.isNotEmpty && v.length < 6) {
+                        return 'Mínimo 6 caracteres';
+                      }
+                      return null;
+                    },
                   ),
                 ],
                 const SizedBox(height: 12),

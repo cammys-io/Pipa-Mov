@@ -1,24 +1,21 @@
 import 'package:flutter/material.dart';
-import '../../screens/catalogos/catalogos_screen.dart';
-import '../../screens/dashboard/dashboard_screen.dart';
-import '../../screens/movimientos/movimientos_screen.dart';
-import '../../screens/reportes/reportes_screen.dart';
+import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+import '../../providers/auth_provider.dart';
 import '../theme/app_theme.dart';
 
-class AppShell extends StatefulWidget {
-  const AppShell({super.key});
-  @override
-  State<AppShell> createState() => _AppShellState();
-}
+class AppShell extends StatelessWidget {
+  final StatefulNavigationShell navigationShell;
 
-class _AppShellState extends State<AppShell> {
-  int _index = 0;
+  const AppShell({super.key, required this.navigationShell});
+
   static const _labels = [
     'Inicio',
     'Operaciones',
     'Gastos',
     'Catálogos',
     'Reportes',
+    'Notas',
   ];
   static const _icons = [
     Icons.space_dashboard_outlined,
@@ -26,18 +23,21 @@ class _AppShellState extends State<AppShell> {
     Icons.receipt_long_outlined,
     Icons.inventory_2_outlined,
     Icons.bar_chart_outlined,
+    Icons.note_alt_outlined,
   ];
-  Widget get _page => switch (_index) {
-    0 => const DashboardScreen(),
-    1 => const MovimientosScreen(esGasto: false),
-    2 => const MovimientosScreen(esGasto: true),
-    3 => const CatalogosScreen(),
-    _ => const ReportesScreen(),
-  };
+
+  void _onTap(int index) {
+    navigationShell.goBranch(
+      index,
+      initialLocation: index == navigationShell.currentIndex,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     final wide = MediaQuery.sizeOf(context).width >= 1000;
+    final index = navigationShell.currentIndex;
+
     return Scaffold(
       body: SafeArea(
         child: Row(
@@ -96,7 +96,7 @@ class _AppShellState extends State<AppShell> {
                         child: Material(
                           color: Colors.transparent,
                           child: ListTile(
-                            selected: _index == i,
+                            selected: index == i,
                             selectedTileColor: AppColors.subtle,
                             selectedColor: AppColors.primary,
                             shape: RoundedRectangleBorder(
@@ -104,11 +104,27 @@ class _AppShellState extends State<AppShell> {
                             ),
                             leading: Icon(_icons[i], size: 22),
                             title: Text(_labels[i]),
-                            onTap: () => setState(() => _index = i),
+                            onTap: () => _onTap(i),
                           ),
                         ),
                       ),
                     const Spacer(),
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Material(
+                        color: Colors.transparent,
+                        child: ListTile(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          leading: const Icon(Icons.logout, size: 22),
+                          title: const Text('Cerrar sesión'),
+                          onTap: () {
+                            context.read<AuthProvider>().logout();
+                          },
+                        ),
+                      ),
+                    ),
                     const Text(
                       'Gestión de flotilla y servicios',
                       style: TextStyle(
@@ -119,19 +135,17 @@ class _AppShellState extends State<AppShell> {
                   ],
                 ),
               ),
-            Expanded(
-              child: KeyedSubtree(key: ValueKey(_index), child: _page),
-            ),
+            Expanded(child: navigationShell),
           ],
         ),
       ),
       bottomNavigationBar: wide
           ? null
           : NavigationBar(
-              selectedIndex: _index,
+              selectedIndex: index,
               labelBehavior:
                   NavigationDestinationLabelBehavior.onlyShowSelected,
-              onDestinationSelected: (i) => setState(() => _index = i),
+              onDestinationSelected: _onTap,
               destinations: [
                 for (var i = 0; i < _labels.length; i++)
                   NavigationDestination(
