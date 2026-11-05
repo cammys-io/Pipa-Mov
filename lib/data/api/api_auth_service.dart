@@ -26,7 +26,7 @@ class ApiAuthService {
   /// - 401: Correo o contraseña incorrectos
   /// - 400: Campos faltantes o inválidos (ValidationPipe)
   Future<Map<String, dynamic>> login(String email, String password) async {
-    final url = '${ApiConfig.baseUrl}${ApiConfig.authPath}/login';
+    const url = '${ApiConfig.baseUrl}${ApiConfig.authPath}/login';
 
     final response = await _client.post(
       Uri.parse(url),

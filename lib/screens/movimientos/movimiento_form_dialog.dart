@@ -7,6 +7,7 @@ import '../../models/movimiento.dart';
 import '../../providers/movimiento_provider.dart';
 import '../../providers/usuario_provider.dart';
 import '../../providers/vehiculo_provider.dart';
+import '../../providers/cliente_especial_provider.dart';
 
 class MovimientoFormDialog extends StatefulWidget {
   final bool esGasto;
@@ -34,6 +35,7 @@ class _MovimientoFormDialogState extends State<MovimientoFormDialog> {
   CategoriaGasto _categoria = CategoriaGasto.combustible;
   String? _empleadoId;
   String? _vehiculoId;
+  String? _clienteId;
   String _capacidad = '5000 ';
   bool _manual = false;
   bool _porHoras = false;
@@ -61,9 +63,16 @@ class _MovimientoFormDialogState extends State<MovimientoFormDialog> {
       _garrafones.text = m.cantidadGarrafones?.toString() ?? '';
       _capacidad = m.capacidadPipa ?? '5mil';
       _material.text = m.tipoMaterial ?? '';
+      _clienteId = m.clienteId;
     } else if (m is Gasto) {
       _categoria = m.categoria;
       _descripcion.text = m.descripcion;
+    }
+    if (!widget.esGasto) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        context.read<ClienteEspecialProvider>().cargar(activo: true);
+      });
     }
   }
 
@@ -222,6 +231,7 @@ class _MovimientoFormDialogState extends State<MovimientoFormDialog> {
             fecha: _fecha,
             empleadoId: _empleadoId!,
             vehiculoId: _vehiculoId,
+            clienteId: _clienteId,
             monto: monto,
             servicio: _servicio,
             evidencia: _evidencia,
@@ -266,6 +276,7 @@ class _MovimientoFormDialogState extends State<MovimientoFormDialog> {
         .vehiculos
         .where((v) => widget.esGasto || v.tipo == _servicio.tipoUnidad)
         .toList();
+    final clientes = context.watch<ClienteEspecialProvider>().clientesActivos;
     final fields = <Widget>[
       OutlinedButton.icon(
         onPressed: _elegirFecha,
@@ -339,6 +350,32 @@ class _MovimientoFormDialogState extends State<MovimientoFormDialog> {
         ],
         onChanged: (id) => setState(() => _vehiculoId = id == '' ? null : id),
       ),
+      if (!widget.esGasto)
+        DropdownButtonFormField<String>(
+          isExpanded: true,
+          initialValue: _clienteId ?? '',
+          decoration: const InputDecoration(
+            labelText: 'Cliente especial (opcional)',
+            prefixIcon: Icon(Icons.business_outlined),
+          ),
+          items: [
+            const DropdownMenuItem(
+              value: '',
+              child: Text('Sin cliente asignado / Público general'),
+            ),
+            ...clientes.map(
+              (c) => DropdownMenuItem(
+                value: c.id,
+                child: Text(
+                  c.etiqueta,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ),
+          ],
+          onChanged: (id) =>
+              setState(() => _clienteId = (id == '' || id == null) ? null : id),
+        ),
       if (!widget.esGasto) ...[
         if (_usaViajes)
           _cantidad(

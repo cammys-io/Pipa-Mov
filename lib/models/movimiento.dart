@@ -64,6 +64,8 @@ class Ingreso extends Movimiento {
   final int? cantidadGarrafones;
   final String? capacidadPipa;
   final String? tipoMaterial;
+  final String? clienteId;
+  final String? clienteNombre;
   const Ingreso({
     required super.id,
     required super.fecha,
@@ -78,11 +80,14 @@ class Ingreso extends Movimiento {
     this.cantidadGarrafones,
     this.capacidadPipa,
     this.tipoMaterial,
+    this.clienteId,
+    this.clienteNombre,
   });
   @override
   String get concepto => servicio.label;
   @override
   String get detalle => [
+    if (clienteNombre != null && clienteNombre!.isNotEmpty) clienteNombre!,
     if (cantidadViajes != null) '$cantidadViajes viajes',
     if (cantidadHoras != null) '$cantidadHoras horas',
     if (cantidadGarrafones != null) '$cantidadGarrafones garrafones',
@@ -96,6 +101,7 @@ class Ingreso extends Movimiento {
     'tipo_servicio': servicio.dbValue,
     'vehiculo_id': vehiculoId,
     'empleado_id': empleadoId,
+    if (clienteId != null && clienteId!.isNotEmpty) 'clienteId': clienteId,
     'cantidad_horas': cantidadHoras,
     'cantidad_viajes': cantidadViajes,
     'cantidad_garrafones': cantidadGarrafones,
@@ -119,6 +125,8 @@ class Ingreso extends Movimiento {
       fecha: DateTime.parse(json['fecha']).toLocal(),
       empleadoId: (json['empleadoId'] ?? json['empleado_id'] ?? json['responsable']?['id'] ?? '').toString(),
       vehiculoId: (json['vehiculoId'] ?? json['vehiculo_id'] ?? json['vehiculo']?['id'])?.toString(),
+      clienteId: (json['clienteId'] ?? json['cliente_id'] ?? json['cliente']?['id'])?.toString(),
+      clienteNombre: (json['cliente']?['nombreEmpresa'] ?? json['clienteNombre'])?.toString(),
       monto: double.tryParse(json['monto_total']?.toString() ?? '0') ?? 0.0,
       servicio: servicio,
       cantidadHoras: json['cantidad_horas'] != null ? double.tryParse(json['cantidad_horas'].toString()) : null,

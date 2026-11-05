@@ -15,7 +15,9 @@ import 'data/api/api_vehiculo_repository.dart';
 import 'data/api/api_usuario_repository.dart';
 import 'data/api/api_movimiento_repository.dart';
 import 'data/api/api_estadisticas_repository.dart';
+import 'data/api/api_cliente_especial_repository.dart';
 import 'providers/estadisticas_provider.dart';
+import 'providers/cliente_especial_provider.dart';
 
 void main() {
   runApp(const PipaMovApp());
@@ -34,6 +36,7 @@ class PipaMovApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => MovimientoProvider(repository: ApiMovimientoRepository())),
         ChangeNotifierProvider(create: (_) => EstadisticasProvider(repository: ApiEstadisticasRepository())),
         ChangeNotifierProvider(create: (_) => NotaProvider()),
+        ChangeNotifierProvider(create: (_) => ClienteEspecialProvider(repository: ApiClienteEspecialRepository())),
       ],
       child: Builder(
         builder: (context) {

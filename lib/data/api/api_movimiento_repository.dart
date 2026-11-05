@@ -53,6 +53,14 @@ class ApiMovimientoRepository implements MovimientoRepository {
       body['vehiculoId'] = body['vehiculo_id'];
       body.remove('vehiculo_id');
     }
+    if (body.containsKey('cliente_id')) {
+      body['clienteId'] = body['cliente_id'];
+      body.remove('cliente_id');
+    }
+    if (body['clienteId'] == null || body['clienteId'] == '') {
+      body.remove('clienteId');
+    }
+    body.remove('clienteNombre');
 
     http.Response res;
     if (isUpdate) {
