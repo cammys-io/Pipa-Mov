@@ -13,7 +13,7 @@
 /// Si el backend se despliega en produccion, cambiar esta URL por la del servidor.
 class ApiConfig {
   /// URL base del backend NestJS. No incluir barra diagonal al final.
-  static const String baseUrl = 'http://localhost:3000';
+  static const String baseUrl = 'https://pipas-backend-production.up.railway.app';
 
   /// Ruta base para el modulo de vehiculos.
   /// Corresponde al controlador @Controller('api/vehicles') del backend.
